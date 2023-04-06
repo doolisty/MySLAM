@@ -69,7 +69,7 @@
 namespace ORB_SLAM2
 {
 
-class Segment;
+// class Segment;
 #define FRAME_GRID_ROWS 48
 #define FRAME_GRID_COLS 64
 
@@ -135,7 +135,7 @@ public:
     cv::Mat UnprojectStereo(const int &i);
 
     // For semantic segmentation thread
-    void CalculEverything( cv::Mat &imRGB,const cv::Mat &imGray,const cv::Mat &imDepth,const cv::Mat &imS);
+    void CalculEverything(cv::Mat &imRGB, const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imS);
    
     void ProcessMovingObject(const cv::Mat &imgray );
     // Sets for abnormal points

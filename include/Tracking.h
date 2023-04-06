@@ -64,7 +64,7 @@
 
 using std::string;
 
-class PointCloudMapping;
+// class PointCloudMapping;
 
 namespace ORB_SLAM2
 {
@@ -74,18 +74,18 @@ class Map;
 class LocalMapping;
 class LoopClosing;
 class System;
-class Segment;
+// class Segment;
 
 class Tracking
 { 
 
 public:
-    Tracking(System* pSys, ORBVocabulary* pVoc, Map* pMap, boost::shared_ptr<PointCloudMapping> pPointCloud, 
-	     KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor);
+    Tracking(System* pSys, ORBVocabulary* pVoc, Map* pMap/*, boost::shared_ptr<PointCloudMapping> pPointCloud*/, 
+	     KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, const string& pascal_png);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
     cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp);
-    cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp);
+    cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const cv::Mat &imSeg, const double &timestamp);
     cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp);
 
     void SetLocalMapper(LocalMapping* pLocalMapper);
@@ -124,6 +124,8 @@ public:
     cv::Mat mImS_C;
     cv::Mat mImRGB;// adding for color point map  by zoe
     cv::Mat mImDepth; // adding mImDepth member to realize pointcloud view
+    cv::Mat mImSeg;
+    cv::Mat label_colors_;
 
     // Initialization Variables (Monocular)
     std::vector<int> mvIniLastMatches;
@@ -144,12 +146,12 @@ public:
 
     void Reset();
     // For the semantic segmentation thread
-    Segment* mpSegment;
+    // Segment* mpSegment;
     cv::Mat mImgNew;
     std::condition_variable mbcvImgNew;
     void GetImg(const cv::Mat &img);
-    void SetSegment(Segment* segment);
-    bool isNewSegmentImgArrived();
+    // void SetSegment(Segment* segment);
+    // bool isNewSegmentImgArrived();
     bool mbNewSegImgFlag;
 
 protected:
@@ -243,7 +245,7 @@ protected:
     bool mbRGB;
 	
 	// For point cloud viewing
-    boost::shared_ptr<PointCloudMapping> mpPointCloudMapping;
+    // boost::shared_ptr<PointCloudMapping> mpPointCloudMapping;
 
     list<MapPoint*> mlpTemporalPoints;
 private:

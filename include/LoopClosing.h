@@ -117,7 +117,7 @@ protected:
     // Loop detector variables
     KeyFrame* mpCurrentKF;
     KeyFrame* mpMatchedKF;
-    Segment* mpSegment;
+    // Segment* mpSegment;
     std::vector<ConsistentGroup> mvConsistentGroups;
     std::vector<KeyFrame*> mvpEnoughConsistentCandidates;
     std::vector<KeyFrame*> mvpCurrentConnectedKFs;

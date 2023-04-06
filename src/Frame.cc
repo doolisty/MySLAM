@@ -56,8 +56,11 @@
 #include "Converter.h"
 #include "ORBmatcher.h"
 #include "Camera.h"
-#include <Segment.h>
+// #include <Segment.h>
 #include <thread>
+#include <opencv2/video/tracking.hpp>
+#include <opencv2/calib3d.hpp>
+
 // The previous image
 cv::Mat imGrayPre;
 std::vector<cv::Point2f> prepoint, nextpoint;

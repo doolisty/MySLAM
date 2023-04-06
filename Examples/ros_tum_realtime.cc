@@ -39,7 +39,7 @@
 #include <octomap/octomap.h>    
 #include <octomap/ColorOcTree.h>
  
-#include <../../../include/System.h>
+#include <../include/System.h>
 
 using namespace octomap;
 

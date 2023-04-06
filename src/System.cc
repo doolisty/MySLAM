@@ -60,8 +60,8 @@
 #include <time.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/common/projection_matrix.h>
-#include "pointcloudmapping.h"
-#include <Segment.h>
+// #include "pointcloudmapping.h"
+// #include <Segment.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/common/projection_matrix.h>
 
@@ -78,8 +78,7 @@ bool has_suffix(const std::string &str, const std::string &suffix)
 
 namespace ORB_SLAM2
 {
-
-System::System(const string &strVocFile, const string &strSettingsFile, const string &pascal_prototxt, const string &pascal_caffemodel, const string &pascal_png, const eSensor sensor,
+System::System(const string &strVocFile, const string &strSettingsFile, const string &pascal_png, const eSensor sensor,
                Viewer* pViewer, Map* map, ORBVocabulary* voc):mSensor(sensor),mbReset(false),mbActivateLocalizationMode(false),
 			   mbDeactivateLocalizationMode(false)
 {
@@ -99,7 +98,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const st
     }
 
     // For point cloud resolution
-    float resolution = fsSettings["PointCloudMapping.Resolution"];
+    // float resolution = fsSettings["PointCloudMapping.Resolution"];
 
     if (voc == NULL)
     {
@@ -110,8 +109,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const st
         bool bVocLoad = false;
         if (has_suffix(strVocFile, ".txt"))
             bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
-        else
-            bVocLoad = mpVocabulary->loadFromBinaryFile(strVocFile);
+        // else
+        //     bVocLoad = mpVocabulary->loadFromBinaryFile(strVocFile);
         if(!bVocLoad)
         {
             cerr << "Wrong path to vocabulary. " << endl;
@@ -140,12 +139,12 @@ System::System(const string &strVocFile, const string &strSettingsFile, const st
 	}
 	 // Initialize pointcloud mapping
 
-    mpPointCloudMapping = boost::make_shared<PointCloudMapping>( resolution );
+    // mpPointCloudMapping = boost::make_shared<PointCloudMapping>( resolution );
     
     // Initialize the Tracking thread
     // (it will live in the main thread of execution, the one that called this constructor)
     
-    mpTracker = new Tracking(this, mpVocabulary, mpMap, mpPointCloudMapping, mpKeyFrameDatabase, strSettingsFile, mSensor);
+    mpTracker = new Tracking(this, mpVocabulary, mpMap/*, mpPointCloudMapping*/, mpKeyFrameDatabase, strSettingsFile, mSensor, pascal_png);
 
     // Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR);
@@ -156,13 +155,13 @@ System::System(const string &strVocFile, const string &strSettingsFile, const st
     mptLoopClosing = new thread(&ORB_SLAM2::LoopClosing::Run, mpLoopCloser);
 
     // Semantic segmentation thread
-    mpSegment =new Segment( pascal_prototxt, pascal_caffemodel, pascal_png);
-    mptSegment =new thread(&ORB_SLAM2::Segment::Run,mpSegment);
-    mpSegment->SetTracker(mpTracker);
+    // mpSegment =new Segment( pascal_prototxt, pascal_caffemodel, pascal_png);
+    // mptSegment =new thread(&ORB_SLAM2::Segment::Run,mpSegment);
+    // mpSegment->SetTracker(mpTracker);
     // Set pointers between threads
     mpTracker->SetLocalMapper(mpLocalMapper);
     mpTracker->SetLoopClosing(mpLoopCloser);
-    mpTracker->SetSegment(mpSegment);
+    // mpTracker->SetSegment(mpSegment);
     mpLocalMapper->SetTracker(mpTracker);
     mpLocalMapper->SetLoopCloser(mpLoopCloser);
 
@@ -224,7 +223,7 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const
     return mpTracker->GrabImageStereo(imLeft,imRight,timestamp);
 }
 
-cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp)
+cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const cv::Mat &segimg, const double &timestamp)
 {
     if(mSensor!=RGBD)
     {
@@ -266,8 +265,8 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const doub
         }
     }
     // Inform Semantic segmentation thread
-    mpTracker->GetImg(im);
-    return  mpTracker->GrabImageRGBD(im,depthmap,timestamp);
+    // mpTracker->GetImg(im);
+    return mpTracker->GrabImageRGBD(im, depthmap, segimg, timestamp);
 }
 
 cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
@@ -337,7 +336,7 @@ void System::Shutdown()
 {
     mpLocalMapper->RequestFinish();
     mpLoopCloser->RequestFinish();
-    mpSegment->RequestFinish();
+    // mpSegment->RequestFinish();
     if (mpViewer != NULL)
         mpViewer->RequestFinish();
 

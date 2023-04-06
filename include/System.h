@@ -70,10 +70,10 @@
 #include "ORBVocabulary.h"
 #include "Viewer.h"
 #include "Converter.h"
-#include "Segment.h"
+// #include "Segment.h"
 #include "Camera.h"
 
-#include "pointcloudmapping.h"
+// #include "pointcloudmapping.h"
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/common/projection_matrix.h>
 #include <pcl/filters/passthrough.h>
@@ -82,7 +82,7 @@
 
 using std::string;
 
-class PointCloudMapping;
+// class PointCloudMapping;
 
 namespace ORB_SLAM2
 {
@@ -92,9 +92,9 @@ class Map;
 class Tracking;
 class LocalMapping;
 class LoopClosing;
-class Segment;
+// class Segment;
 
-static std::vector<std::s>
+// static std::vector<std::s>
 
 class System
 {
@@ -109,7 +109,7 @@ public:
 
 public:
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
-    System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor=MONOCULAR, Viewer* v=NULL, Map* m=NULL, ORBVocabulary* voc = NULL);
+    System(const string &strVocFile, const string &strSettingsFile, const string &pascal_png, const eSensor sensor=MONOCULAR, Viewer* v=NULL, Map* m=NULL, ORBVocabulary* voc = NULL);
 
     // Proccess the given stereo frame. Images must be synchronized and rectified.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
@@ -120,7 +120,7 @@ public:
     // Input image: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Input depthmap: Float (CV_32F).
     // Returns the camera pose (empty if tracking fails).
-    cv::Mat TrackRGBD( const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp);
+    cv::Mat TrackRGBD( const cv::Mat &im, const cv::Mat &depthmap, const cv::Mat &segimg, const double &timestamp);
 
     // Proccess the given monocular frame
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
@@ -163,8 +163,8 @@ public:
 
     Tracking* GetTracker() {return mpTracker;}
     // For the semantic segmentation thread
-    Segment* mpSegment;
-    std::thread* mptSegment;
+    // Segment* mpSegment;
+    // std::thread* mptSegment;
     Tracking* mpTracker;
 
 private:
@@ -205,7 +205,7 @@ private:
     bool mbActivateLocalizationMode;
     bool mbDeactivateLocalizationMode;
     // point cloud mapping
-    boost::shared_ptr<PointCloudMapping> mpPointCloudMapping;
+    // boost::shared_ptr<PointCloudMapping> mpPointCloudMapping;
 };
 
 }// namespace ORB_SLAM

@@ -67,7 +67,7 @@
 
 #include"Optimizer.h"
 #include"PnPsolver.h"
-#include"Segment.h"
+// #include"Segment.h"
 
 #include<iostream>
 
@@ -78,8 +78,8 @@ using namespace std;
 namespace ORB_SLAM2
 {
 
-Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, Map *pMap, boost::shared_ptr<PointCloudMapping> pPointCloud, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor):
-   mSensor(sensor), mbOnlyTracking(false), mbVO(false), mbNewSegImgFlag(false),mpORBVocabulary(pVoc), mpPointCloudMapping( pPointCloud ),mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer*>(NULL)), mpSystem(pSys),mpMap(pMap), mnLastRelocFrameId(0)
+Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, Map *pMap/*, boost::shared_ptr<PointCloudMapping> pPointCloud*/, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, const string& pascal_png):
+   mSensor(sensor), mbOnlyTracking(false), mbVO(false), mbNewSegImgFlag(false),mpORBVocabulary(pVoc)/*, mpPointCloudMapping( pPointCloud )*/,mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer*>(NULL)), mpSystem(pSys),mpMap(pMap), mnLastRelocFrameId(0)
 {
     if (pMap->KeyFramesInMap() == 0)
 	    mState = NO_IMAGES_YET;
@@ -151,6 +151,9 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, Map *pMap, boost::shared_p
             mDepthMapFactor = 1.0f/mDepthMapFactor;
     }
     fSettings.release();
+
+    string LUT_file = pascal_png;
+    label_colors_ = cv::imread(LUT_file,1);
 }
 
 void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
@@ -167,10 +170,10 @@ void Tracking::SetViewer(Viewer *pViewer)
 {
     mpViewer=pViewer;
 }
-void Tracking::SetSegment(Segment* segment)
-{
-    mpSegment=segment;
-}
+// void Tracking::SetSegment(Segment* segment)
+// {
+//     mpSegment=segment;
+// }
 
 cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp)
 {
@@ -208,12 +211,12 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
     return mCurrentFrame.mTcw.clone();
 }
 
-cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp)
+cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const cv::Mat &imSeg, const double &timestamp)
 {
-    
     mImGray = imRGB;
     mImDepth = imD;
     mImRGB = imRGB;
+    mImSeg = imSeg;
     
     if(mImGray.channels()==3)
     {
@@ -233,46 +236,56 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const d
     if(mDepthMapFactor!=1 || mImDepth.type()!=CV_32F);
     mImDepth.convertTo(mImDepth,CV_32F,mDepthMapFactor);
 
-    mCurrentFrame = Frame(mImGray,mImDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mThDepth);
-    orbExtractTime=mCurrentFrame.orbExtractTime;
-    movingDetectTime=mCurrentFrame.movingDetectTime;
-    std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
-    while(!isNewSegmentImgArrived()) 
-    {
-        usleep(1);
-    }
-    std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
-    double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3).count();
-    cout << "wait for new segment img time  =" << ttrack*1000 << endl;
+    mCurrentFrame = Frame(mImGray, mImDepth, timestamp, mpORBextractorLeft, mpORBVocabulary, mThDepth);
+    orbExtractTime = mCurrentFrame.orbExtractTime;
+    movingDetectTime = mCurrentFrame.movingDetectTime;
+    // std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
+    // while(!isNewSegmentImgArrived()) 
+    // {
+    //     usleep(1);
+    // }
+    // std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
+    // double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3).count();
+    // cout << "wait for new segment img time  =" << ttrack*1000 << endl;
+
     // Remove dynamic points
-    mCurrentFrame.CalculEverything(mImRGB,mImGray,mImDepth,mpSegment->mImgSegmentLatest);
+    // mCurrentFrame.CalculEverything(mImRGB,mImGray,mImDepth,mpSegment->mImgSegmentLatest);
+    mCurrentFrame.CalculEverything(mImRGB, mImGray, mImDepth, mImSeg);
+
+    cv::Mat mImS_color = mImSeg.clone();
+    cv::cvtColor(mImSeg, mImS_color, CV_GRAY2BGR);
+
+    LUT(mImS_color, label_colors_, mImS_C);
+    cv::resize(mImSeg, mImSeg, cv::Size(Camera::width,Camera::height));
+    cv::resize(mImS_C, mImS_C, cv::Size(Camera::width,Camera::height));
     
-    mImS = mpSegment->mImgSegmentLatest;
-    mImS_C = mpSegment->mImgSegment_color_final;
+    // mImS = mpSegment->mImgSegmentLatest;
+    // mImS_C = mpSegment->mImgSegment_color_final;
+    mImS = mImSeg;
     Track();
     return mCurrentFrame.mTcw.clone();
 }
 
-void Tracking::GetImg(const cv::Mat& img)
-{
-    unique_lock<mutex> lock(mpSegment->mMutexGetNewImg);
-    mpSegment->mbNewImgFlag=true;
-    img.copyTo(mpSegment->mImg);
-}
+// void Tracking::GetImg(const cv::Mat& img)
+// {
+//     unique_lock<mutex> lock(mpSegment->mMutexGetNewImg);
+//     mpSegment->mbNewImgFlag=true;
+//     img.copyTo(mpSegment->mImg);
+// }
 
-bool Tracking::isNewSegmentImgArrived()
-{
-    std::unique_lock <std::mutex> lock(mpSegment->mMutexNewImgSegment);
-    if(mbNewSegImgFlag)
-    {
-        mbNewSegImgFlag=false;
-        return true;
-    }
-    else 
-    {
-	    return false;
-    }
-}
+// bool Tracking::isNewSegmentImgArrived()
+// {
+//     std::unique_lock <std::mutex> lock(mpSegment->mMutexNewImgSegment);
+//     if(mbNewSegImgFlag)
+//     {
+//         mbNewSegImgFlag=false;
+//         return true;
+//     }
+//     else 
+//     {
+// 	    return false;
+//     }
+// }
 
 cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
 {
@@ -1195,7 +1208,7 @@ void Tracking::CreateNewKeyFrame()
     mpLocalMapper->SetNotStop(false);
 	
 	// insert Key Frame into point cloud viewer
-    mpPointCloudMapping->insertKeyFrame( pKF,this->mImS_C,this->mImS ,this->mImRGB, this->mImDepth );
+    // mpPointCloudMapping->insertKeyFrame( pKF,this->mImS_C,this->mImS ,this->mImRGB, this->mImDepth );
 
     mnLastKeyFrameId = mCurrentFrame.mnId;
     mpLastKeyFrame = pKF;
