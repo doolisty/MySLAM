@@ -69,9 +69,8 @@
 #include"PnPsolver.h"
 // #include"Segment.h"
 
-#include<iostream>
-
-#include<mutex>
+#include <iostream>
+#include <mutex>
 
 using namespace std;
 
@@ -218,23 +217,30 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const 
     mImRGB = imRGB;
     mImSeg = imSeg;
     
-    if(mImGray.channels()==3)
-    {
-        if(mbRGB)
-            cvtColor(mImGray,mImGray,CV_RGB2GRAY);
-        else
-            cvtColor(mImGray,mImGray,CV_BGR2GRAY);
-    }
-    else if(mImGray.channels()==4)
-    {
-        if(mbRGB)
-            cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
-        else
-            cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
+    cout << "stage 1" << endl;
+
+    if (mImGray.channels() == 3) {
+        cout << "stage 2.1" << endl;
+        if (mbRGB) {
+            cout << "stage 2.1.1" << endl;
+            cvtColor(mImGray, mImGray, CV_RGB2GRAY);
+        } else {
+            cout << "stage 2.1.2" << endl;
+            cvtColor(mImGray, mImGray, CV_BGR2GRAY);
+        }
+    } else if (mImGray.channels() == 4) {
+        cout << "stage 2.2" << endl;
+        if (mbRGB) {
+            cout << "stage 2.2.1" << endl;
+            cvtColor(mImGray, mImGray, CV_RGBA2GRAY);
+        } else {
+            cout << "stage 2.2.2" << endl;
+            cvtColor(mImGray, mImGray, CV_BGRA2GRAY);
+        }
     }
 
-    if(mDepthMapFactor!=1 || mImDepth.type()!=CV_32F);
-    mImDepth.convertTo(mImDepth,CV_32F,mDepthMapFactor);
+    if (mDepthMapFactor != 1 || mImDepth.type() != CV_32F);
+    mImDepth.convertTo(mImDepth, CV_32F, mDepthMapFactor);
 
     mCurrentFrame = Frame(mImGray, mImDepth, timestamp, mpORBextractorLeft, mpORBVocabulary, mThDepth);
     orbExtractTime = mCurrentFrame.orbExtractTime;

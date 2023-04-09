@@ -77,7 +77,7 @@ long unsigned int Frame::nNextId=0;
 bool Frame::mbInitialComputations=true;
 float Frame::mnMinX, Frame::mnMinY, Frame::mnMaxX, Frame::mnMaxY;
 float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
-inline void Frame::InitializeScaleLevels() 
+void Frame::InitializeScaleLevels() 
 {
     mnScaleLevels = mpORBextractorLeft->GetLevels();
     mfScaleFactor = mpORBextractorLeft->GetScaleFactor();

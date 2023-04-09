@@ -109,6 +109,7 @@ public:
 
 public:
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
+    System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer = true) {};
     System(const string &strVocFile, const string &strSettingsFile, const string &pascal_png, const eSensor sensor=MONOCULAR, Viewer* v=NULL, Map* m=NULL, ORBVocabulary* voc = NULL);
 
     // Proccess the given stereo frame. Images must be synchronized and rectified.

@@ -79,20 +79,19 @@ bool has_suffix(const std::string &str, const std::string &suffix)
 namespace ORB_SLAM2
 {
 System::System(const string &strVocFile, const string &strSettingsFile, const string &pascal_png, const eSensor sensor,
-               Viewer* pViewer, Map* map, ORBVocabulary* voc):mSensor(sensor),mbReset(false),mbActivateLocalizationMode(false),
+               Viewer* pViewer, Map* map, ORBVocabulary* voc) : mSensor(sensor), mbReset(false), mbActivateLocalizationMode(false),
 			   mbDeactivateLocalizationMode(false)
 {
     clock_t tStart = clock();
 	// Output welcome message
-    cout << endl <<"Welcome !" << endl << endl;
+    cout << endl << "Welcome !" << endl << endl;
 
 	string str_sensor[] = {"Monocular", "Stereo", "RGB-D"};
     cout << "Input sensor was set to: " << str_sensor[mSensor] << endl;
 
     // Check settings file
     cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
-    if(!fsSettings.isOpened())
-    {
+    if (!fsSettings.isOpened()) {
         cerr << "Failed to open settings file at: " << strSettingsFile << endl;
         exit(-1);
     }
@@ -100,42 +99,43 @@ System::System(const string &strVocFile, const string &strSettingsFile, const st
     // For point cloud resolution
     // float resolution = fsSettings["PointCloudMapping.Resolution"];
 
-    if (voc == NULL)
-    {
+    if (voc == NULL) {
         // Load ORB Vocabulary
         cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
 
         mpVocabulary = new ORBVocabulary();
         bool bVocLoad = false;
-        if (has_suffix(strVocFile, ".txt"))
+        if (has_suffix(strVocFile, ".txt")) {
             bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
+        }
         // else
         //     bVocLoad = mpVocabulary->loadFromBinaryFile(strVocFile);
-        if(!bVocLoad)
-        {
+        if (!bVocLoad) {
             cerr << "Wrong path to vocabulary. " << endl;
             cerr << "Failed to open at: " << strVocFile << endl;
             exit(-1);
         }
-        printf("loading duration: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+        printf("loading duration: %.2fs\n", (double)(clock() - tStart) / CLOCKS_PER_SEC);
         cout << "Vocabulary loaded!" << endl << endl;
-	}
-	else
+	} else {
         mpVocabulary = voc;
+    }
 
-	if (!Camera::initialized) Camera::Load(fsSettings);
+	if (!Camera::initialized) {
+        Camera::Load(fsSettings);
+    }
 
-        // Create KeyFrame Database
-        mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+    // Create KeyFrame Database
+    mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 	   
-
     // Create the Map
-    if (map==NULL) mpMap = new Map();
-	else
-	{
-    mpMap = map;
-    for(auto kf: map->GetAllKeyFrames())
-        mpKeyFrameDatabase->add(kf);
+    if (map == NULL) {
+        mpMap = new Map();
+    } else {
+        mpMap = map;
+        for (auto kf : map->GetAllKeyFrames()) {
+            mpKeyFrameDatabase->add(kf);
+        }
 	}
 	 // Initialize pointcloud mapping
 
@@ -145,14 +145,17 @@ System::System(const string &strVocFile, const string &strSettingsFile, const st
     // (it will live in the main thread of execution, the one that called this constructor)
     
     mpTracker = new Tracking(this, mpVocabulary, mpMap/*, mpPointCloudMapping*/, mpKeyFrameDatabase, strSettingsFile, mSensor, pascal_png);
+    cout << "[Tracking] running in thread " << hex << this_thread::get_id() << endl;
 
     // Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR);
     mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run,mpLocalMapper);
+    cout << "[LocalMapping] running in thread " << hex << mptLocalMapping->get_id() << endl;
 
     // Initialize the Loop Closing thread and launch
     mpLoopCloser = new LoopClosing(mpMap, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR);
     mptLoopClosing = new thread(&ORB_SLAM2::LoopClosing::Run, mpLoopCloser);
+    cout << "[LoopClosing] running in thread " << hex << mptLoopClosing->get_id() << endl;
 
     // Semantic segmentation thread
     // mpSegment =new Segment( pascal_prototxt, pascal_caffemodel, pascal_png);
@@ -170,8 +173,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const st
     
     //Initialize the Viewer thread and launch
     mpViewer = pViewer;
-	if (mpViewer != NULL)
-	{
+	if (mpViewer != NULL) {
         mpViewer->Register(this);
         mptViewer = new thread(&Viewer::Run, mpViewer);
         mpTracker->SetViewer(mpViewer);
