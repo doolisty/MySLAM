@@ -216,25 +216,17 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const 
     mImDepth = imD;
     mImRGB = imRGB;
     mImSeg = imSeg;
-    
-    cout << "stage 1" << endl;
 
     if (mImGray.channels() == 3) {
-        cout << "stage 2.1" << endl;
         if (mbRGB) {
-            cout << "stage 2.1.1" << endl;
             cvtColor(mImGray, mImGray, CV_RGB2GRAY);
         } else {
-            cout << "stage 2.1.2" << endl;
             cvtColor(mImGray, mImGray, CV_BGR2GRAY);
         }
     } else if (mImGray.channels() == 4) {
-        cout << "stage 2.2" << endl;
         if (mbRGB) {
-            cout << "stage 2.2.1" << endl;
             cvtColor(mImGray, mImGray, CV_RGBA2GRAY);
         } else {
-            cout << "stage 2.2.2" << endl;
             cvtColor(mImGray, mImGray, CV_BGRA2GRAY);
         }
     }
