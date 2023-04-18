@@ -169,46 +169,6 @@ void Tracking::SetViewer(Viewer *pViewer)
 {
     mpViewer=pViewer;
 }
-// void Tracking::SetSegment(Segment* segment)
-// {
-//     mpSegment=segment;
-// }
-
-cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp)
-{
-    mImGray = imRectLeft;
-    cv::Mat imGrayRight = imRectRight;
-
-    if(mImGray.channels()==3)
-    {
-        if(mbRGB)
-        {
-            cvtColor(mImGray,mImGray,CV_RGB2GRAY);
-            cvtColor(imGrayRight,imGrayRight,CV_RGB2GRAY);
-        }
-        else
-        {
-            cvtColor(mImGray,mImGray,CV_BGR2GRAY);
-            cvtColor(imGrayRight,imGrayRight,CV_BGR2GRAY);
-        }
-    }
-    else if(mImGray.channels()==4)
-    {
-        if(mbRGB)
-        {
-            cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
-            cvtColor(imGrayRight,imGrayRight,CV_RGBA2GRAY);
-        }
-        else
-        {
-            cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
-            cvtColor(imGrayRight,imGrayRight,CV_BGRA2GRAY);
-        }
-    }
-
-    mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mThDepth);
-    return mCurrentFrame.mTcw.clone();
-}
 
 cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const cv::Mat &imSeg, const double &timestamp)
 {
@@ -237,17 +197,8 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const 
     mCurrentFrame = Frame(mImGray, mImDepth, timestamp, mpORBextractorLeft, mpORBVocabulary, mThDepth);
     orbExtractTime = mCurrentFrame.orbExtractTime;
     movingDetectTime = mCurrentFrame.movingDetectTime;
-    // std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
-    // while(!isNewSegmentImgArrived()) 
-    // {
-    //     usleep(1);
-    // }
-    // std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
-    // double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3).count();
-    // cout << "wait for new segment img time  =" << ttrack*1000 << endl;
 
     // Remove dynamic points
-    // mCurrentFrame.CalculEverything(mImRGB,mImGray,mImDepth,mpSegment->mImgSegmentLatest);
     mCurrentFrame.CalculEverything(mImRGB, mImGray, mImDepth, mImSeg);
 
     cv::Mat mImS_color = mImSeg.clone();
@@ -257,60 +208,8 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const 
     cv::resize(mImSeg, mImSeg, cv::Size(Camera::width,Camera::height));
     cv::resize(mImS_C, mImS_C, cv::Size(Camera::width,Camera::height));
     
-    // mImS = mpSegment->mImgSegmentLatest;
-    // mImS_C = mpSegment->mImgSegment_color_final;
     mImS = mImSeg;
     Track();
-    return mCurrentFrame.mTcw.clone();
-}
-
-// void Tracking::GetImg(const cv::Mat& img)
-// {
-//     unique_lock<mutex> lock(mpSegment->mMutexGetNewImg);
-//     mpSegment->mbNewImgFlag=true;
-//     img.copyTo(mpSegment->mImg);
-// }
-
-// bool Tracking::isNewSegmentImgArrived()
-// {
-//     std::unique_lock <std::mutex> lock(mpSegment->mMutexNewImgSegment);
-//     if(mbNewSegImgFlag)
-//     {
-//         mbNewSegImgFlag=false;
-//         return true;
-//     }
-//     else 
-//     {
-// 	    return false;
-//     }
-// }
-
-cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
-{
-    mImGray = im;
-
-    if(mImGray.channels()==3)
-    {
-        if(mbRGB)
-            cvtColor(mImGray,mImGray,CV_RGB2GRAY);
-        else
-            cvtColor(mImGray,mImGray,CV_BGR2GRAY);
-    }
-    else if(mImGray.channels()==4)
-    {
-        if(mbRGB)
-            cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
-        else
-            cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
-    }
-
-    if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
-        mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mThDepth);
-    else
-        mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mThDepth);
-
-    Track();
-
     return mCurrentFrame.mTcw.clone();
 }
 

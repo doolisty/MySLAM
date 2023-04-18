@@ -84,18 +84,12 @@ public:
     // Copy constructor.
     Frame(const Frame &frame);
 
-    // Constructor for stereo cameras.
-    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, const float &thDepth);
-
     // Constructor for RGB-D cameras.
     Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, const float &thDepth);
 
-    // Constructor for Monocular cameras.
-    Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, const float &thDepth);
-
     // Extract ORB on the image. 0 for left image and 1 for right image.
-    void ExtractORBKeyPoints(int flag,const cv::Mat &im);
-    void ExtractORBDesp(int flag,const cv::Mat &im);
+    void ExtractORBKeyPoints(const cv::Mat &im);
+    void ExtractORBDesp(const cv::Mat &im);
     // Compute Bag of Words representation.
     void ComputeBoW();
 
@@ -135,9 +129,9 @@ public:
     cv::Mat UnprojectStereo(const int &i);
 
     // For semantic segmentation thread
-    void CalculEverything(cv::Mat &imRGB, const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imS);
+    void CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imS);
    
-    void ProcessMovingObject(const cv::Mat &imgray );
+    void ProcessMovingObject(const cv::Mat &imgray);
     // Sets for abnormal points
     std::vector<cv::Point2f> T_M;
     double limit_dis_epi =1; 

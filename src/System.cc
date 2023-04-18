@@ -180,50 +180,6 @@ System::System(const string &strVocFile, const string &strSettingsFile, const st
 	}
 }
 
-cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
-{
-    if(mSensor!=STEREO)
-    {
-        cerr << "ERROR: you called TrackStereo but input sensor was not set to STEREO." << endl;
-        exit(-1);
-    }   
-
-    // Check mode change
-    {
-        unique_lock<mutex> lock(mMutexMode);
-        if(mbActivateLocalizationMode)
-        {
-            mpLocalMapper->RequestStop();
-
-            // Wait until Local Mapping has effectively stopped
-            while(!mpLocalMapper->isStopped())
-            {
-                usleep(1000);
-            }
-
-            mpTracker->InformOnlyTracking(true);
-            mbActivateLocalizationMode = false;
-        }
-        if(mbDeactivateLocalizationMode)
-        {
-            mpTracker->InformOnlyTracking(false);
-            mpLocalMapper->Release();
-            mbDeactivateLocalizationMode = false;
-        }
-    }
-
-    // Check reset
-    {
-        unique_lock<mutex> lock(mMutexReset);
-        if(mbReset)
-        {
-            mpTracker->Reset();
-            mbReset = false;
-        }
-    }
-
-    return mpTracker->GrabImageStereo(imLeft,imRight,timestamp);
-}
 
 cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const cv::Mat &segimg, const double &timestamp)
 {
@@ -271,50 +227,6 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const cv::
     return mpTracker->GrabImageRGBD(im, depthmap, segimg, timestamp);
 }
 
-cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
-{
-    if(mSensor!=MONOCULAR)
-    {
-        cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular." << endl;
-        exit(-1);
-    }
-
-    // Check mode change
-    {
-        unique_lock<mutex> lock(mMutexMode);
-        if(mbActivateLocalizationMode)
-        {
-            mpLocalMapper->RequestStop();
-
-            // Wait until Local Mapping has effectively stopped
-            while(!mpLocalMapper->isStopped())
-            {
-                usleep(1000);
-            }
-
-            mpTracker->InformOnlyTracking(true);
-            mbActivateLocalizationMode = false;
-        }
-        if(mbDeactivateLocalizationMode)
-        {
-            mpTracker->InformOnlyTracking(false);
-            mpLocalMapper->Release();
-            mbDeactivateLocalizationMode = false;
-        }
-    }
-
-    // Check reset
-    {
-        unique_lock<mutex> lock(mMutexReset);
-        if(mbReset)
-        {
-            mpTracker->Reset();
-            mbReset = false;
-        }
-    }
-
-    return mpTracker->GrabImageMonocular(im,timestamp);
-}
 
 void System::ActivateLocalizationMode()
 {
