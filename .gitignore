@@ -23,3 +23,7 @@ build/
 lib/
 
 .vscode/
+
+# depth contour extraction
+*.png
+dip_out/
