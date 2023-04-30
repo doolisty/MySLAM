@@ -54,6 +54,7 @@
 #define FRAME_H
 
 #include <vector>
+#include <unordered_map>
 
 #include "MapPoint.h"
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
@@ -75,9 +76,9 @@ namespace ORB_SLAM2
 
 class MapPoint;
 class KeyFrame;
+struct PtStat;
 
-class Frame
-{
+class Frame {
 public:
     Frame();
 
@@ -85,7 +86,11 @@ public:
     Frame(const Frame &frame);
 
     // Constructor for RGB-D cameras.
-    Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, const float &thDepth);
+    Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, const float &thDepth);
+
+    // Constructor for MySLAM.
+    Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imSeg, const double &timeStamp, ORBextractor* extractor,
+          ORBVocabulary* voc, const float &thDepth, std::unordered_map<int, PtStat>& track_category_stat);
 
     // Extract ORB on the image. 0 for left image and 1 for right image.
     void ExtractORBKeyPoints(const cv::Mat &im);
@@ -116,7 +121,7 @@ public:
     // Compute the cell of a keypoint (return false if outside the grid)
     bool PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY);
 
-    vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1) const;
+    vector<size_t> GetFeaturesInArea(const float &x, const float &y, const float &r, const int minLevel=-1, const int maxLevel=-1) const;
 
     // Search a match for each keypoint in the left image to a keypoint in the right image.
     // If there is a match, depth is computed and the right coordinate associated to the left keypoint is stored.
@@ -223,6 +228,8 @@ public:
     // Assign keypoints to the grid for speed up feature matching (called in the constructor).
 
     void AssignFeaturesToGrid();
+
+    std::unordered_map<int, PtStat> &category_stat_;
 
 private:
     // Rotation, translation and camera center

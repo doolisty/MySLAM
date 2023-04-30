@@ -207,7 +207,7 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const 
     LUT(mImS_color, label_colors_, mImS_C);
     cv::resize(mImSeg, mImSeg, cv::Size(Camera::width,Camera::height));
     cv::resize(mImS_C, mImS_C, cv::Size(Camera::width,Camera::height));
-    
+
     mImS = mImSeg;
     Track();
     return mCurrentFrame.mTcw.clone();

@@ -76,6 +76,18 @@ class LoopClosing;
 class System;
 // class Segment;
 
+struct PtStat {
+    int num_dynamic;
+    int num_static;
+    double prev_score;
+    double curr_score;
+
+    inline void clear() {
+        num_dynamic = 0;
+        num_static = 0;
+    }
+};
+
 class Tracking
 { 
 
@@ -151,6 +163,8 @@ public:
     // void SetSegment(Segment* segment);
     // bool isNewSegmentImgArrived();
     bool mbNewSegImgFlag;
+
+    std::unordered_map<int, PtStat> category_stat_track_;
 
 protected:
     // Main tracking function. It is independent of the input sensor.

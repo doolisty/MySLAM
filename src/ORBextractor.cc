@@ -1059,92 +1059,103 @@ void ORBextractor::DeleteOneRowOfMat(cv::Mat& object, int num)
     }
 }
 
-int ORBextractor::CheckMovingKeyPoints( const cv::Mat &imGray, const cv::Mat &imS,std::vector<std::vector<cv::KeyPoint>>& mvKeysT,std::vector<cv::Point2f> T)
-{
+int ORBextractor::CheckMovingKeyPoints(const cv::Mat &imGray, const cv::Mat &imS, std::vector<std::vector<cv::KeyPoint>> &mvKeysT,
+                                       std::vector<cv::Point2f> T, std::unordered_set<int> &dynamic_labels) {
    
     float scale;
-    int flag_orb_mov =0;
+    int flag_orb_mov = 0;
    
-   // Make further judgment
-       
-	for (int i = 0; i < T.size(); i++)
-	{
-	    for(int m = -15; m < 15; m++) 
-	    {
-	        for(int n = -15; n < 15; n++)
-	        {
-	            int my = ((int)T[i].y + n) ;
-	            int mx = ((int)T[i].x + m) ;
-		        if( ((int)T[i].y + n) > (Camera::height -1) ) my = (Camera::height - 1) ;
-	        	if( ((int)T[i].y + n) < 1 ) my = 0;
-		        if( ((int)T[i].x + m) > (Camera::width -1) ) mx = (Camera::width - 1) ;
-		        if( ((int)T[i].x + m) < 1 ) mx = 0;
-                // The label of peopel is 15
-		        if((int)imS.ptr<uchar>(my)[mx] == PEOPLE_LABLE)
-		        {
-		            flag_orb_mov=1;
-		               break;
-		        }
+    // Make further judgment
+	for (int i = 0; i < T.size(); i++) {
+	    for (int m = -15; m < 15; m++) {
+	        for (int n = -15; n < 15; n++) {
+	            int my = ((int)T[i].y + n);
+	            int mx = ((int)T[i].x + m);
+
+		        if (((int)T[i].y + n) > (Camera::height - 1)) {
+                    my = (Camera::height - 1);
+                }
+	        	if (((int)T[i].y + n) < 1) {
+                    my = 0;
+                }
+		        if (((int)T[i].x + m) > (Camera::width - 1)) {
+                    mx = (Camera::width - 1);
+                }
+		        if (((int)T[i].x + m) < 1) {
+                    mx = 0;
+                }
+
+                int label = (int)imS.ptr<uchar>(my)[mx];
+                if (dynamic_labels.count(label) > 0) {
+                    flag_orb_mov = 1;
+                    break;
+                }
+                // // The label of peopel is 15
+		        // if ((int)imS.ptr<uchar>(my)[mx] == PEOPLE_LABLE) {
+		        //     flag_orb_mov = 1;
+                //     break;
+		        // }
 	        }
-	            if(flag_orb_mov==1)
-	                 break;
-	     }
-	         if(flag_orb_mov==1)
-	            break;
+            if (flag_orb_mov == 1) {
+                break;
+            }
+	    }
+        if (flag_orb_mov == 1) {
+            break;
+        }
 	}
 	 
 	// Moving
-	if(flag_orb_mov==1)
-	{
-	    for (int level = 0; level < nlevels; ++level)
-            {
-                vector<cv::KeyPoint>& mkeypoints = mvKeysT[level];
-		        int nkeypointsLevel = (int)mkeypoints.size();
-		        if(nkeypointsLevel==0)
-		                continue;
-		        if (level != 0)
-			        scale = mvScaleFactor[level]; 
-		        else
-			        scale =1; 
-                vector<cv::KeyPoint>::iterator keypoint = mkeypoints.begin();
-               
-                while(keypoint != mkeypoints.end())
-	            {
-		             cv::Point2f search_coord = keypoint->pt * scale;
-		             // Search in the semantic image
-		             if(search_coord.x >= (Camera::width -1)) search_coord.x=(Camera::width -1);
-		             if(search_coord.y >= (Camera::height -1)) search_coord.y=(Camera::height -1) ;
-		             int label_coord =(int)imS.ptr<uchar>((int)search_coord.y)[(int)search_coord.x];
-		             if(label_coord == PEOPLE_LABLE) 
-		             {
-			            keypoint=mkeypoints.erase(keypoint);		       
-		             }
-		             else
-		             {
-			            keypoint++;
-		             }
-	             }
-	          }
-      }
-      return flag_orb_mov;
+	if (flag_orb_mov == 1) {
+	    for (int level = 0; level < nlevels; ++level) {
+            vector<cv::KeyPoint>& mkeypoints = mvKeysT[level];
+            int nkeypointsLevel = (int)mkeypoints.size();
+            if (nkeypointsLevel == 0) {
+                continue;
+            }
+            if (level != 0) {
+                scale = mvScaleFactor[level];
+            } else {
+                scale = 1;
+            }
+
+            vector<cv::KeyPoint>::iterator keypoint = mkeypoints.begin();
+            while (keypoint != mkeypoints.end()) {
+                cv::Point2f search_coord = keypoint->pt * scale;
+                // Search in the semantic image
+                if (search_coord.x >= (Camera::width - 1)) {
+                    search_coord.x = Camera::width - 1;
+                }
+                if (search_coord.y >= (Camera::height -1)) {
+                    search_coord.y = Camera::height - 1;
+                }
+                int label_coord = (int)imS.ptr<uchar>((int)search_coord.y)[(int)search_coord.x];
+                // if (label_coord == PEOPLE_LABLE) {
+                if (dynamic_labels.count(label_coord) > 0) {
+                    keypoint = mkeypoints.erase(keypoint);
+                } else {
+                    keypoint++;
+                }
+            }
+        }
+    }
+    return flag_orb_mov;
 }
-void ORBextractor::operator()(cv::InputArray _image, cv::InputArray _mask, vector<vector<cv::KeyPoint>>& _keypoints
-                      )
-{ 
-    if(_image.empty())
+void ORBextractor::operator()(cv::InputArray _image, cv::InputArray _mask, vector<vector<cv::KeyPoint>>& _keypoints) {
+    if (_image.empty()) {
         return;
+    }
 
     cv::Mat image = _image.getMat();
-    assert(image.type() == CV_8UC1 );
+    assert(image.type() == CV_8UC1);
 
     // Pre-compute the scale pyramid
     ComputePyramid(image);
     ComputeKeyPointsOctTree(_keypoints);
-
 }
 
 void ORBextractor::ProcessDesp(cv::InputArray _image, cv::InputArray _mask, vector<vector<cv::KeyPoint>>& _allKeypoints,
-                      vector<cv::KeyPoint>& _mKeypoints,cv::OutputArray _descriptors)
+                               vector<cv::KeyPoint>& _mKeypoints,cv::OutputArray _descriptors)
 {
   
     cv:: Mat descriptors;

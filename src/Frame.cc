@@ -51,15 +51,16 @@
  *--------------------------------------------------------------------------------------------------
  */
 
+#include <unordered_set>
 
 #include "Frame.h"
 #include "Converter.h"
 #include "ORBmatcher.h"
 #include "Camera.h"
-// #include <Segment.h>
 #include <thread>
 #include <opencv2/video/tracking.hpp>
 #include <opencv2/calib3d.hpp>
+
 
 // The previous image
 cv::Mat imGrayPre;
@@ -71,12 +72,14 @@ std::vector<uchar> state;
 std::vector<float> err;
 std::vector<std::vector<cv::KeyPoint>> mvKeysPre;
 
-namespace ORB_SLAM2
-{
-long unsigned int Frame::nNextId=0;
-bool Frame::mbInitialComputations=true;
+namespace ORB_SLAM2 {
+
+long unsigned int Frame::nNextId = 0;
+bool Frame::mbInitialComputations = true;
 float Frame::mnMinX, Frame::mnMinY, Frame::mnMaxX, Frame::mnMaxY;
 float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
+
+
 void Frame::InitializeScaleLevels() 
 {
     mnScaleLevels = mpORBextractorLeft->GetLevels();
@@ -87,7 +90,8 @@ void Frame::InitializeScaleLevels()
     mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
     mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 }
-  
+
+
 // Computes image bounds for the undistorted image (called in the constructor)
 void ComputeImageBounds()
 {
@@ -123,6 +127,7 @@ void ComputeImageBounds()
     }
 }
 
+
 void Frame::InitializeClass()
 {
     if(Frame::mbInitialComputations)
@@ -135,10 +140,11 @@ void Frame::InitializeClass()
     }
 }
 
+
 Frame::Frame() {}
 
 
-//Copy Constructor
+// Copy Constructor
 Frame::Frame(const Frame &frame)
    :mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
     mTimeStamp(frame.mTimeStamp),
@@ -162,9 +168,9 @@ Frame::Frame(const Frame &frame)
 
 
 // Constructor for RGB-D cameras for DS_SLAM
-Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, const float &thDepth)
-    :mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
-     mTimeStamp(timeStamp), mThDepth(thDepth)
+Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, const float &thDepth)
+            : mpORBvocabulary(voc), mpORBextractorLeft(extractor), mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
+              mTimeStamp(timeStamp), mThDepth(thDepth)
 {
     // Frame ID
     mnId = nNextId++;
@@ -188,32 +194,73 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
         std::swap(imGrayPre, imGrayT);
     } else {
         std::swap(imGrayPre, imGrayT);
-        flag_mov=0;
+        flag_mov = 0;
     }
 }
 
 
-void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imS) { 
-    int flagprocess = 0;
-    for (int m = 0; m < imS.rows; m += 1)  {
-        for (int n = 0; n < imS.cols; n += 1) {
-            int labelnum = (int)imS.ptr<uchar>(m)[n];
-            if (labelnum == PEOPLE_LABLE)  {
-                flagprocess = 1;
-                break;
-            }
-        }
-        if (flagprocess == 1) {
-            break;
+Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imSeg, const double &timeStamp, ORBextractor* extractor,
+             ORBVocabulary* voc, const float &thDepth, std::unordered_map<int, PtStat> &track_category_stat)
+            : mpORBvocabulary(voc), mpORBextractorLeft(extractor), mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
+              mTimeStamp(timeStamp), mThDepth(thDepth)
+{
+    category_stat_ = track_category_stat;
+    
+    // Frame ID
+    mnId = nNextId++;
+
+    // Scale Level Info
+    InitializeScaleLevels();
+
+    // ORB extraction
+    std::chrono::steady_clock::time_point t11 = std::chrono::steady_clock::now();
+    ExtractORBKeyPoints(imGray);
+    std::chrono::steady_clock::time_point t22 = std::chrono::steady_clock::now();
+    orbExtractTime = std::chrono::duration_cast<std::chrono::duration<double>>(t22 - t11).count();
+
+    cv::Mat imGrayT = imGray;
+    // Calculate the dynamic abnormal points and output the T matrix
+    if (imGrayPre.data) {
+        std::chrono::steady_clock::time_point tm1 = std::chrono::steady_clock::now();
+        ProcessMovingObjectSeg(imGray, imSeg);
+        std::chrono::steady_clock::time_point tm2 = std::chrono::steady_clock::now();
+        movingDetectTime = std::chrono::duration_cast<std::chrono::duration<double>>(tm2 - tm1).count();
+        std::swap(imGrayPre, imGrayT);
+    } else {
+        std::swap(imGrayPre, imGrayT);
+        flag_mov = 0;
+    }
+}
+
+
+void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imS) {
+    std::unordered_set<int> dynamic_labels;
+    for (auto &[k, v] : category_stat_) {
+        if (v > 0.6) {
+            dynamic_labels.emplace_back(k);
         }
     }
+    // int flagprocess = 0;
+    // for (int m = 0; m < imS.rows; m += 1)  {
+    //     for (int n = 0; n < imS.cols; n += 1) {
+    //         int labelnum = (int)imS.ptr<uchar>(m)[n];
+    //         if (labelnum == PEOPLE_LABLE) {
+    //             flagprocess = 1;
+    //             break;
+    //         }
+    //     }
+    //     if (flagprocess == 1) {
+    //         break;
+    //     }
+    // }
 
-    if (!T_M.empty() && flagprocess) {
+    // if (!T_M.empty() && flagprocess) {
+    if (!T_M.empty() && dynamic_labels.size() > 0) {
         std::chrono::steady_clock::time_point tc1 = std::chrono::steady_clock::now();
-        flag_mov = mpORBextractorLeft->CheckMovingKeyPoints(imGray, imS, mvKeysTemp, T_M);
+        flag_mov = mpORBextractorLeft->CheckMovingKeyPoints(imGray, imS, mvKeysTemp, T_M, dynamic_labels);
         std::chrono::steady_clock::time_point tc2 = std::chrono::steady_clock::now();
         double tc = std::chrono::duration_cast<std::chrono::duration<double> >(tc2 - tc1).count();
-        cout << "check time =" << tc * 1000 <<  endl;
+        cout << "check time = " << tc * 1000 << endl;
     }
 
     ExtractORBDesp(imGray);
@@ -274,6 +321,85 @@ void Frame::ProcessMovingObject(const cv::Mat &imgray) {
     cv::cornerSubPix(imGrayPre, prepoint, cv::Size(10, 10), cv::Size(-1, -1), cv::TermCriteria(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 20, 0.03));
 	cv::calcOpticalFlowPyrLK(imGrayPre, imgray, prepoint, nextpoint, state, err, cv::Size(22, 22), 5, cv::TermCriteria(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 20, 0.01));
 
+    // yzhao: 清洗从光流匹配得到的点对
+	for (int i = 0; i < state.size(); i++) {
+        if (state[i] != 0) {
+            int dx[10] = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+            int dy[10] = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+            int x1 = prepoint[i].x, y1 = prepoint[i].y;
+            int x2 = nextpoint[i].x, y2 = nextpoint[i].y;
+            if ((x1 < limit_edge_corner || x1 >= imgray.cols - limit_edge_corner || x2 < limit_edge_corner || x2 >= imgray.cols - limit_edge_corner
+                 || y1 < limit_edge_corner || y1 >= imgray.rows - limit_edge_corner || y2 < limit_edge_corner || y2 >= imgray.rows - limit_edge_corner))
+            {
+                state[i] = 0;
+                continue;
+            }
+            double sum_check = 0;
+            for (int j = 0; j < 9; j++) {
+                sum_check += abs(imGrayPre.at<uchar>(y1 + dy[j], x1 + dx[j]) - imgray.at<uchar>(y2 + dy[j], x2 + dx[j]));
+            }
+            if (sum_check > limit_of_check) {
+                state[i] = 0;
+            }
+            if (state[i]) {
+                F_prepoint.push_back(prepoint[i]);
+                F_nextpoint.push_back(nextpoint[i]);
+            }
+        }
+    }
+    // F-Matrix
+    cv::Mat mask = cv::Mat(cv::Size(1, 300), CV_8UC1);
+    cv::Mat F = cv::findFundamentalMat(F_prepoint, F_nextpoint, mask, cv::FM_RANSAC, 0.1, 0.99);
+    for (int i = 0; i < mask.rows; i++) {
+        if (mask.at<uchar>(i, 0) == 0) {
+            continue;
+        } else {
+            // Circle(pre_frame, F_prepoint[i], 6, Scalar(255, 255, 0), 3);
+            double A = F.at<double>(0, 0) * F_prepoint[i].x + F.at<double>(0, 1) * F_prepoint[i].y + F.at<double>(0, 2);
+            double B = F.at<double>(1, 0) * F_prepoint[i].x + F.at<double>(1, 1) * F_prepoint[i].y + F.at<double>(1, 2);
+            double C = F.at<double>(2, 0) * F_prepoint[i].x + F.at<double>(2, 1) * F_prepoint[i].y + F.at<double>(2, 2);
+            double dd = fabs(A * F_nextpoint[i].x + B * F_nextpoint[i].y + C) / sqrt(A*A + B*B); //Epipolar constraints
+            if (dd <= 0.1) {
+                F2_prepoint.push_back(F_prepoint[i]);
+                F2_nextpoint.push_back(F_nextpoint[i]);
+            }
+        }
+    }
+    F_prepoint = F2_prepoint;
+    F_nextpoint = F2_nextpoint;
+
+    for (int i = 0; i < prepoint.size(); i++) {
+        if (state[i] != 0) {
+            double A = F.at<double>(0, 0) * prepoint[i].x + F.at<double>(0, 1) * prepoint[i].y + F.at<double>(0, 2);
+            double B = F.at<double>(1, 0) * prepoint[i].x + F.at<double>(1, 1) * prepoint[i].y + F.at<double>(1, 2);
+            double C = F.at<double>(2, 0) * prepoint[i].x + F.at<double>(2, 1) * prepoint[i].y + F.at<double>(2, 2);
+            double dd = fabs(A * nextpoint[i].x + B * nextpoint[i].y + C) / sqrt(A*A + B*B);
+
+            // Judge outliers
+            if (dd <= limit_dis_epi) {
+                continue;
+            }
+            T_M.push_back(nextpoint[i]);
+        }
+    }
+}
+
+
+void Frame::ProcessMovingObjectSeg(const cv::Mat &imgray, const cv::Mat &imSeg) {
+    // Clear the previous data
+	F_prepoint.clear();
+	F_nextpoint.clear();
+	F2_prepoint.clear();
+	F2_nextpoint.clear();
+	T_M.clear();
+
+	// Detect dynamic target and ultimately optput the T matrix
+	
+    cv::goodFeaturesToTrack(imGrayPre, prepoint, 1000, 0.01, 8, cv::Mat(), 3, true, 0.04);
+    cv::cornerSubPix(imGrayPre, prepoint, cv::Size(10, 10), cv::Size(-1, -1), cv::TermCriteria(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 20, 0.03));
+	cv::calcOpticalFlowPyrLK(imGrayPre, imgray, prepoint, nextpoint, state, err, cv::Size(22, 22), 5, cv::TermCriteria(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 20, 0.01));
+
+    // yzhao: 清洗从光流匹配得到的点对
 	for (int i = 0; i < state.size(); i++) {
         if (state[i] != 0) {
             int dx[10] = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
@@ -335,6 +461,12 @@ void Frame::ProcessMovingObject(const cv::Mat &imgray) {
         }
     }
 
+    // 更新 pts_stats
+    std::unordered_map<int, PtStat> tmp_stats;
+    for (auto &pt : T_M) {
+        int label = (int)imSeg.ptr<uchar>(my)[mx];
+        if (tmp_stats)
+    }
 }
 
 void Frame::SetPose(cv::Mat Tcw) {
