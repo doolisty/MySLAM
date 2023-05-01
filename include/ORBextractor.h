@@ -58,6 +58,7 @@
 #include "Camera.h"
 #include <vector>
 #include <list>
+#include <unordered_set>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -67,6 +68,7 @@
 
 namespace ORB_SLAM2
 {
+struct PtStat;
 
 class ExtractorNode
 {
@@ -125,8 +127,8 @@ public:
     }
 
     std::vector<cv::Mat> mvImagePyramid;
-    int CheckMovingKeyPoints(const cv::Mat &imGray, const cv::Mat &imS,std::vector<std::vector<cv::KeyPoint>>& mvKeysT,std::vector<cv::Point2f> T
-                             std::unordered_map<int, PtStat>& track_category_stat);
+    int CheckMovingKeyPoints(const cv::Mat &imGray, const cv::Mat &imS, std::vector<std::vector<cv::KeyPoint>>& mvKeysT, std::vector<cv::Point2f> T,
+                             std::unordered_set<int> &dynamic_labels);
     void DeleteOneRowOfMat(cv::Mat& object, int num);
 
 protected:

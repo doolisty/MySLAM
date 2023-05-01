@@ -54,6 +54,7 @@
 #define FRAME_H
 
 #include <vector>
+#include <unordered_set>
 #include <unordered_map>
 
 #include "MapPoint.h"
@@ -76,7 +77,19 @@ namespace ORB_SLAM2
 
 class MapPoint;
 class KeyFrame;
-struct PtStat;
+struct PtStat {
+    int num_dynamic;
+    int num_static;
+
+    // scores to measure how dynamic it is
+    // 0 - completely static
+    // 1 - completely dynamic
+    double prev_score;
+    double curr_score;
+
+    // initialized as static
+    PtStat() : num_dynamic(0), num_static(0), prev_score(0.0f), curr_score(0.0f) {}
+};
 
 class Frame {
 public:
@@ -84,13 +97,14 @@ public:
 
     // Copy constructor.
     Frame(const Frame &frame);
+    // void operator=(const Frame &frame);
 
     // Constructor for RGB-D cameras.
     Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, const float &thDepth);
 
     // Constructor for MySLAM.
     Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imSeg, const double &timeStamp, ORBextractor* extractor,
-          ORBVocabulary* voc, const float &thDepth, std::unordered_map<int, PtStat>& track_category_stat);
+          ORBVocabulary* voc, const float &thDepth, std::unordered_map<int, PtStat> *track_category_stat_ptr);
 
     // Extract ORB on the image. 0 for left image and 1 for right image.
     void ExtractORBKeyPoints(const cv::Mat &im);
@@ -137,6 +151,8 @@ public:
     void CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imS);
    
     void ProcessMovingObject(const cv::Mat &imgray);
+    void ProcessMovingObjectSeg(const cv::Mat &imgray, const cv::Mat &imSeg);
+
     // Sets for abnormal points
     std::vector<cv::Point2f> T_M;
     double limit_dis_epi =1; 
@@ -229,14 +245,18 @@ public:
 
     void AssignFeaturesToGrid();
 
-    std::unordered_map<int, PtStat> &category_stat_;
+    std::unordered_map<int, PtStat> *category_stat_ptr_;
 
 private:
     // Rotation, translation and camera center
     cv::Mat mRcw;
     cv::Mat mtcw;
     cv::Mat mRwc;
-    cv::Mat mOw; 
+    cv::Mat mOw;
+
+    double dynamic_thresh_;
+    double alpha_;
+    double beta_;
 };
 
 }// namespace ORB_SLAM

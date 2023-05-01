@@ -153,6 +153,11 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, Map *pMap/*, boost::shared
 
     string LUT_file = pascal_png;
     label_colors_ = cv::imread(LUT_file,1);
+
+    // init label PEOPLE
+    PtStat people_stat;
+    people_stat.curr_score = 0.6;
+    category_stat_track_[PEOPLE_LABLE] = people_stat;
 }
 
 void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
@@ -194,7 +199,7 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const 
     if (mDepthMapFactor != 1 || mImDepth.type() != CV_32F);
     mImDepth.convertTo(mImDepth, CV_32F, mDepthMapFactor);
 
-    mCurrentFrame = Frame(mImGray, mImDepth, timestamp, mpORBextractorLeft, mpORBVocabulary, mThDepth);
+    mCurrentFrame = Frame(mImGray, mImDepth, mImSeg, timestamp, mpORBextractorLeft, mpORBVocabulary, mThDepth, &category_stat_track_);
     orbExtractTime = mCurrentFrame.orbExtractTime;
     movingDetectTime = mCurrentFrame.movingDetectTime;
 

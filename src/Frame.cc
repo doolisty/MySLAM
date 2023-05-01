@@ -51,8 +51,6 @@
  *--------------------------------------------------------------------------------------------------
  */
 
-#include <unordered_set>
-
 #include "Frame.h"
 #include "Converter.h"
 #include "ORBmatcher.h"
@@ -141,12 +139,14 @@ void Frame::InitializeClass()
 }
 
 
-Frame::Frame() {}
+Frame::Frame() {
+    category_stat_ptr_ = new std::unordered_map<int, PtStat>();
+}
 
 
 // Copy Constructor
 Frame::Frame(const Frame &frame)
-   :mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
+  : mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
     mTimeStamp(frame.mTimeStamp),
     mThDepth(frame.mThDepth), N(frame.N), mvKeys(frame.mvKeys),
     mvKeysRight(frame.mvKeysRight), mvKeysUn(frame.mvKeysUn),  mvuRight(frame.mvuRight),
@@ -156,15 +156,43 @@ Frame::Frame(const Frame &frame)
     mpReferenceKF(frame.mpReferenceKF), mnScaleLevels(frame.mnScaleLevels),
     mfScaleFactor(frame.mfScaleFactor), mfLogScaleFactor(frame.mfLogScaleFactor),
     mvScaleFactors(frame.mvScaleFactors), mvInvScaleFactors(frame.mvInvScaleFactors),
-    mvLevelSigma2(frame.mvLevelSigma2), mvInvLevelSigma2(frame.mvInvLevelSigma2)
+    mvLevelSigma2(frame.mvLevelSigma2), mvInvLevelSigma2(frame.mvInvLevelSigma2),
+    category_stat_ptr_(frame.category_stat_ptr_)
 {
-    for(int i=0;i<FRAME_GRID_COLS;i++)
-        for(int j=0; j<FRAME_GRID_ROWS; j++)
-            mGrid[i][j]=frame.mGrid[i][j];
-
-    if(!frame.mTcw.empty())
+    for (int i = 0; i < FRAME_GRID_COLS; i++) {
+        for (int j = 0; j < FRAME_GRID_ROWS; j++) {
+            mGrid[i][j] = frame.mGrid[i][j];
+        }
+    }
+    if (!frame.mTcw.empty()) {
         SetPose(frame.mTcw);
+    }
 }
+
+
+// void Frame::operator=(const Frame &frame)
+//   : mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
+//     mTimeStamp(frame.mTimeStamp),
+//     mThDepth(frame.mThDepth), N(frame.N), mvKeys(frame.mvKeys),
+//     mvKeysRight(frame.mvKeysRight), mvKeysUn(frame.mvKeysUn),  mvuRight(frame.mvuRight),
+//     mvDepth(frame.mvDepth), mBowVec(frame.mBowVec), mFeatVec(frame.mFeatVec),
+//     mDescriptors(frame.mDescriptors.clone()), mDescriptorsRight(frame.mDescriptorsRight.clone()),
+//     mvpMapPoints(frame.mvpMapPoints), mvbOutlier(frame.mvbOutlier), mnId(frame.mnId),
+//     mpReferenceKF(frame.mpReferenceKF), mnScaleLevels(frame.mnScaleLevels),
+//     mfScaleFactor(frame.mfScaleFactor), mfLogScaleFactor(frame.mfLogScaleFactor),
+//     mvScaleFactors(frame.mvScaleFactors), mvInvScaleFactors(frame.mvInvScaleFactors),
+//     mvLevelSigma2(frame.mvLevelSigma2), mvInvLevelSigma2(frame.mvInvLevelSigma2),
+//     category_stat_ptr_(frame.category_stat_ptr_)
+// {
+//     for (int i = 0; i < FRAME_GRID_COLS; i++) {
+//         for (int j = 0; j < FRAME_GRID_ROWS; j++) {
+//             mGrid[i][j] = frame.mGrid[i][j];
+//         }
+//     }
+//     if (!frame.mTcw.empty()) {
+//         SetPose(frame.mTcw);
+//     }
+// }
 
 
 // Constructor for RGB-D cameras for DS_SLAM
@@ -200,12 +228,11 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
 
 
 Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imSeg, const double &timeStamp, ORBextractor* extractor,
-             ORBVocabulary* voc, const float &thDepth, std::unordered_map<int, PtStat> &track_category_stat)
+             ORBVocabulary* voc, const float &thDepth, std::unordered_map<int, PtStat> *track_category_stat_ptr)
             : mpORBvocabulary(voc), mpORBextractorLeft(extractor), mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
-              mTimeStamp(timeStamp), mThDepth(thDepth)
+              mTimeStamp(timeStamp), mThDepth(thDepth), category_stat_ptr_(track_category_stat_ptr),
+              dynamic_thresh_(0.6), alpha_(0.4), beta_(15.0)
 {
-    category_stat_ = track_category_stat;
-    
     // Frame ID
     mnId = nNextId++;
 
@@ -235,11 +262,19 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imSeg
 
 void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imS) {
     std::unordered_set<int> dynamic_labels;
-    for (auto &[k, v] : category_stat_) {
-        if (v > 0.6) {
-            dynamic_labels.emplace_back(k);
+    for (auto &entry : *category_stat_ptr_) {
+        int label = entry.first;
+        PtStat &stat = entry.second;
+        if (stat.curr_score >= dynamic_thresh_) {
+            dynamic_labels.insert(label);
         }
     }
+
+    std::cout << "dynamic labels: ";
+    for (auto it = dynamic_labels.begin(); it != dynamic_labels.end(); ++it) {
+        std::cout << *it << ", ";
+    }
+    std::cout << std::endl;
     // int flagprocess = 0;
     // for (int m = 0; m < imS.rows; m += 1)  {
     //     for (int n = 0; n < imS.cols; n += 1) {
@@ -446,6 +481,8 @@ void Frame::ProcessMovingObjectSeg(const cv::Mat &imgray, const cv::Mat &imSeg) 
     F_prepoint = F2_prepoint;
     F_nextpoint = F2_nextpoint;
 
+    std::unordered_map<int, PtStat> tmp_stats;
+
     for (int i = 0; i < prepoint.size(); i++) {
         if (state[i] != 0) {
             double A = F.at<double>(0, 0) * prepoint[i].x + F.at<double>(0, 1) * prepoint[i].y + F.at<double>(0, 2);
@@ -453,19 +490,42 @@ void Frame::ProcessMovingObjectSeg(const cv::Mat &imgray, const cv::Mat &imSeg) 
             double C = F.at<double>(2, 0) * prepoint[i].x + F.at<double>(2, 1) * prepoint[i].y + F.at<double>(2, 2);
             double dd = fabs(A * nextpoint[i].x + B * nextpoint[i].y + C) / sqrt(A*A + B*B);
 
+            int tmp_x = (int)nextpoint[i].x, tmp_y = (int)nextpoint[i].y;
+            int label = (int)imSeg.ptr<uchar>(tmp_y)[tmp_x];
+            if (tmp_stats.count(label) == 0) {
+                tmp_stats[label] = PtStat();
+            }
+
             // Judge outliers
             if (dd <= limit_dis_epi) {
+                ++tmp_stats[label].num_static;
                 continue;
             }
+            ++tmp_stats[label].num_dynamic;
             T_M.push_back(nextpoint[i]);
         }
     }
 
+    auto update_formula = [this](const int &n_dy, const int &n_st, const double &prev_score) -> double {
+        return std::max(0.0, std::min(1.0, prev_score + alpha_ * (beta_ * n_dy - n_st) / (n_dy + n_st)));
+    };
+
     // 更新 pts_stats
-    std::unordered_map<int, PtStat> tmp_stats;
-    for (auto &pt : T_M) {
-        int label = (int)imSeg.ptr<uchar>(my)[mx];
-        if (tmp_stats)
+    for (const auto &entry : tmp_stats) {
+        int label = entry.first;
+        PtStat stat = entry.second;
+        if (category_stat_ptr_->count(label) > 0) {
+            auto &track_stat = (*category_stat_ptr_)[label];
+            int &n_dy = stat.num_dynamic;
+            int &n_st = stat.num_static;
+            track_stat.num_dynamic = n_dy;
+            track_stat.num_static = n_st;
+            track_stat.prev_score = track_stat.curr_score;
+            track_stat.curr_score = update_formula(n_dy, n_st, track_stat.prev_score);
+        } else {
+            // 使用默认的拷贝构造函数
+            (*category_stat_ptr_)[label] = stat;
+        }
     }
 }
 

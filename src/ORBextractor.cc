@@ -1061,7 +1061,7 @@ void ORBextractor::DeleteOneRowOfMat(cv::Mat& object, int num)
 
 int ORBextractor::CheckMovingKeyPoints(const cv::Mat &imGray, const cv::Mat &imS, std::vector<std::vector<cv::KeyPoint>> &mvKeysT,
                                        std::vector<cv::Point2f> T, std::unordered_set<int> &dynamic_labels) {
-   
+
     float scale;
     int flag_orb_mov = 0;
    

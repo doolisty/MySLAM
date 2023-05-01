@@ -76,17 +76,7 @@ class LoopClosing;
 class System;
 // class Segment;
 
-struct PtStat {
-    int num_dynamic;
-    int num_static;
-    double prev_score;
-    double curr_score;
-
-    inline void clear() {
-        num_dynamic = 0;
-        num_static = 0;
-    }
-};
+struct PtStat;
 
 class Tracking
 { 
