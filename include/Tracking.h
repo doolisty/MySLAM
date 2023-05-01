@@ -155,6 +155,7 @@ public:
     bool mbNewSegImgFlag;
 
     std::unordered_map<int, PtStat> category_stat_track_;
+    int moving_frame_cnt_;
 
 protected:
     // Main tracking function. It is independent of the input sensor.

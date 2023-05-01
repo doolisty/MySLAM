@@ -77,8 +77,11 @@ using namespace std;
 namespace ORB_SLAM2
 {
 
-Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, Map *pMap/*, boost::shared_ptr<PointCloudMapping> pPointCloud*/, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, const string& pascal_png):
-   mSensor(sensor), mbOnlyTracking(false), mbVO(false), mbNewSegImgFlag(false),mpORBVocabulary(pVoc)/*, mpPointCloudMapping( pPointCloud )*/,mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer*>(NULL)), mpSystem(pSys),mpMap(pMap), mnLastRelocFrameId(0)
+Tracking::Tracking(System *pSys, ORBVocabulary *pVoc, Map *pMap, KeyFrameDatabase *pKFDB,
+                   const string &strSettingPath, const int sensor, const string &pascal_png)
+                   : mSensor(sensor), mbOnlyTracking(false), mbVO(false), mbNewSegImgFlag(false), 
+                     mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer*>(NULL)),
+                     mpSystem(pSys), mpMap(pMap), mnLastRelocFrameId(0), moving_frame_cnt_(0)
 {
     if (pMap->KeyFramesInMap() == 0)
 	    mState = NO_IMAGES_YET;
@@ -204,7 +207,7 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const 
     movingDetectTime = mCurrentFrame.movingDetectTime;
 
     // Remove dynamic points
-    mCurrentFrame.CalculEverything(mImRGB, mImGray, mImDepth, mImSeg);
+    mCurrentFrame.CalculEverything(mImRGB, mImGray, mImDepth, mImSeg, moving_frame_cnt_);
 
     cv::Mat mImS_color = mImSeg.clone();
     cv::cvtColor(mImSeg, mImS_color, CV_GRAY2BGR);

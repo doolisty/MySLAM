@@ -148,7 +148,7 @@ public:
     cv::Mat UnprojectStereo(const int &i);
 
     // For semantic segmentation thread
-    void CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imS);
+    void CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imS, int &moving_frame_cnt);
    
     void ProcessMovingObject(const cv::Mat &imgray);
     void ProcessMovingObjectSeg(const cv::Mat &imgray, const cv::Mat &imSeg);
@@ -257,6 +257,8 @@ private:
     double dynamic_thresh_;
     double alpha_;
     double beta_;
+
+    int moving_frame_cnt_;
 };
 
 }// namespace ORB_SLAM

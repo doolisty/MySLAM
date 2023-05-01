@@ -170,31 +170,6 @@ Frame::Frame(const Frame &frame)
 }
 
 
-// void Frame::operator=(const Frame &frame)
-//   : mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
-//     mTimeStamp(frame.mTimeStamp),
-//     mThDepth(frame.mThDepth), N(frame.N), mvKeys(frame.mvKeys),
-//     mvKeysRight(frame.mvKeysRight), mvKeysUn(frame.mvKeysUn),  mvuRight(frame.mvuRight),
-//     mvDepth(frame.mvDepth), mBowVec(frame.mBowVec), mFeatVec(frame.mFeatVec),
-//     mDescriptors(frame.mDescriptors.clone()), mDescriptorsRight(frame.mDescriptorsRight.clone()),
-//     mvpMapPoints(frame.mvpMapPoints), mvbOutlier(frame.mvbOutlier), mnId(frame.mnId),
-//     mpReferenceKF(frame.mpReferenceKF), mnScaleLevels(frame.mnScaleLevels),
-//     mfScaleFactor(frame.mfScaleFactor), mfLogScaleFactor(frame.mfLogScaleFactor),
-//     mvScaleFactors(frame.mvScaleFactors), mvInvScaleFactors(frame.mvInvScaleFactors),
-//     mvLevelSigma2(frame.mvLevelSigma2), mvInvLevelSigma2(frame.mvInvLevelSigma2),
-//     category_stat_ptr_(frame.category_stat_ptr_)
-// {
-//     for (int i = 0; i < FRAME_GRID_COLS; i++) {
-//         for (int j = 0; j < FRAME_GRID_ROWS; j++) {
-//             mGrid[i][j] = frame.mGrid[i][j];
-//         }
-//     }
-//     if (!frame.mTcw.empty()) {
-//         SetPose(frame.mTcw);
-//     }
-// }
-
-
 // Constructor for RGB-D cameras for DS_SLAM
 Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, const float &thDepth)
             : mpORBvocabulary(voc), mpORBextractorLeft(extractor), mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
@@ -260,7 +235,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imSeg
 }
 
 
-void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imS) {
+void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imS, int &moving_frame_cnt) {
     std::unordered_set<int> dynamic_labels;
     for (auto &entry : *category_stat_ptr_) {
         int label = entry.first;
@@ -272,7 +247,7 @@ void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray, const 
 
     std::cout << "dynamic labels: ";
     for (auto it = dynamic_labels.begin(); it != dynamic_labels.end(); ++it) {
-        std::cout << *it << ", ";
+        std::cout << std::dec << *it << ", ";
     }
     std::cout << std::endl;
     // int flagprocess = 0;
@@ -291,16 +266,18 @@ void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray, const 
 
     // if (!T_M.empty() && flagprocess) {
     if (!T_M.empty() && dynamic_labels.size() > 0) {
+        ++moving_frame_cnt;
         std::chrono::steady_clock::time_point tc1 = std::chrono::steady_clock::now();
         flag_mov = mpORBextractorLeft->CheckMovingKeyPoints(imGray, imS, mvKeysTemp, T_M, dynamic_labels);
         std::chrono::steady_clock::time_point tc2 = std::chrono::steady_clock::now();
         double tc = std::chrono::duration_cast<std::chrono::duration<double> >(tc2 - tc1).count();
-        cout << "check time = " << tc * 1000 << endl;
+        std::cout << "[moving No." << std::dec << moving_frame_cnt <<  "] check time = " << tc * 1000 << std::endl;
     }
 
     ExtractORBDesp(imGray);
     N = mvKeys.size();
     if (mvKeys.empty()) {
+        std::cout << "mvKeys is empty, returned" << std::endl;
         return;
     }
     UndistortKeyPoints();
