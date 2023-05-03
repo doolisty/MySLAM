@@ -38,7 +38,7 @@ void LoadImages(const string& strAssociationFilename, vector<string>& vstrImageF
                 vector<string>& vstrImageFilenamesD,  vector<string>& vstrImageFilenamesSeg,
                 vector<double>& vTimestamps);
 
-// Usage: ./rgbd_tum /root/catkin_ws/src/MySLAM/Vocabulary/ORBvoc.txt /root/catkin_ws/src/MySLAM/Examples/RGB-D/TUM1.yaml /root/Dataset /root/Dataset/associate.txt
+// Usage: ./rgbd_tum /root/catkin_ws/src/MySLAM/Vocabulary/ORBvoc.txt /root/catkin_ws/src/MySLAM/Examples/RGB-D/TUM1.yaml /root/Dataset/fr3_s_xyz /root/Dataset/fr3_s_xyz/associate.txt
 
 int main(int argc, char **argv) {
     if (argc != 5) {
