@@ -28,14 +28,12 @@
 
 #include<mutex>
 
-namespace ORB_SLAM2
-{
+namespace ORB_SLAM2 {
 
-class MapDrawer
-{
-
+class MapDrawer {
 public:
     MapDrawer(const string &strSettingPath);
+    MapDrawer(Map* pMap, const string &strSettingPath);
 
     Map* mpMap;
 

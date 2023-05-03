@@ -70,14 +70,13 @@
 #include <pcl/io/pcd_io.h>
 #include "Converter.h"
 
-bool has_suffix(const std::string &str, const std::string &suffix)
-{
+bool has_suffix(const std::string &str, const std::string &suffix) {
     std::size_t index = str.find(suffix, str.size() - suffix.size());
-    return (index != std::string::npos);
+    return index != std::string::npos;
 }
 
-namespace ORB_SLAM2
-{
+namespace ORB_SLAM2 {
+
 System::System(const string &strVocFile, const string &strSettingsFile, const string &pascal_png, const eSensor sensor,
                Viewer* pViewer, Map* map, ORBVocabulary* voc) : mSensor(sensor), mbReset(false), mbActivateLocalizationMode(false),
 			   mbDeactivateLocalizationMode(false)
@@ -137,23 +136,23 @@ System::System(const string &strVocFile, const string &strSettingsFile, const st
             mpKeyFrameDatabase->add(kf);
         }
 	}
-	 // Initialize pointcloud mapping
+	// Initialize pointcloud mapping
 
     // mpPointCloudMapping = boost::make_shared<PointCloudMapping>( resolution );
-    
+
     // Initialize the Tracking thread
     // (it will live in the main thread of execution, the one that called this constructor)
-    
-    mpTracker = new Tracking(this, mpVocabulary, mpMap/*, mpPointCloudMapping*/, mpKeyFrameDatabase, strSettingsFile, mSensor, pascal_png);
+
+    mpTracker = new Tracking(this, mpVocabulary, mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor, pascal_png);
     cout << "[Tracking] running in thread " << hex << this_thread::get_id() << endl;
 
     // Initialize the Local Mapping thread and launch
-    mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR);
-    mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run,mpLocalMapper);
+    mpLocalMapper = new LocalMapping(mpMap, mSensor == MONOCULAR);
+    mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run, mpLocalMapper);
     cout << "[LocalMapping] running in thread " << hex << mptLocalMapping->get_id() << endl;
 
     // Initialize the Loop Closing thread and launch
-    mpLoopCloser = new LoopClosing(mpMap, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR);
+    mpLoopCloser = new LoopClosing(mpMap, mpKeyFrameDatabase, mpVocabulary, mSensor != MONOCULAR);
     mptLoopClosing = new thread(&ORB_SLAM2::LoopClosing::Run, mpLoopCloser);
     cout << "[LoopClosing] running in thread " << hex << mptLoopClosing->get_id() << endl;
 
@@ -170,21 +169,27 @@ System::System(const string &strVocFile, const string &strSettingsFile, const st
 
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
-    
+
     //Initialize the Viewer thread and launch
-    mpViewer = pViewer;
-	if (mpViewer != NULL) {
-        mpViewer->Register(this);
-        mptViewer = new thread(&Viewer::Run, mpViewer);
-        mpTracker->SetViewer(mpViewer);
-	}
+    // mpViewer = pViewer;
+	// if (mpViewer != NULL) {
+    //     mpViewer->Register(this);
+    //     mptViewer = new thread(&Viewer::Run, mpViewer);
+    //     mpTracker->SetViewer(mpViewer);
+	// }
+
+    // Create Drawers. These are used by the Viewer
+    mpFrameDrawer = new FrameDrawer(mpMap);
+    mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
+    
+    mpViewer = new Viewer(this, mpFrameDrawer, mpMapDrawer, mpTracker, strSettingsFile);
+    mptViewer = new thread(&Viewer::Run, mpViewer);
+    mpTracker->SetViewer(mpViewer);
 }
 
 
-cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const cv::Mat &segimg, const double &timestamp)
-{
-    if(mSensor!=RGBD)
-    {
+cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const cv::Mat &segimg, const double &timestamp) {
+    if (mSensor != RGBD) {
         cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << endl;
         exit(-1);
     }    
@@ -192,21 +197,18 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const cv::
     // Check mode change
     {
         unique_lock<mutex> lock(mMutexMode);
-        if(mbActivateLocalizationMode)
-        {
+        if (mbActivateLocalizationMode) {
             mpLocalMapper->RequestStop();
 
             // Wait until Local Mapping has effectively stopped
-            while(!mpLocalMapper->isStopped())
-            {
+            while (!mpLocalMapper->isStopped()) {
                 usleep(1000);
             }
 
             mpTracker->InformOnlyTracking(true);
             mbActivateLocalizationMode = false;
         }
-        if(mbDeactivateLocalizationMode)
-        {
+        if (mbDeactivateLocalizationMode) {
             mpTracker->InformOnlyTracking(false);
             mpLocalMapper->Release();
             mbDeactivateLocalizationMode = false;
@@ -216,8 +218,7 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const cv::
     // Check reset
     {
         unique_lock<mutex> lock(mMutexReset);
-        if(mbReset)
-        {
+        if (mbReset) {
             mpTracker->Reset();
             mbReset = false;
         }
@@ -240,61 +241,53 @@ void System::DeactivateLocalizationMode()
     mbDeactivateLocalizationMode = true;
 }
 
-void System::Reset()
-{
+void System::Reset() {
     unique_lock<mutex> lock(mMutexReset);
     mbReset = true;
 }
 
-void System::Shutdown()
-{
+void System::Shutdown() {
     mpLocalMapper->RequestFinish();
     mpLoopCloser->RequestFinish();
     // mpSegment->RequestFinish();
-    if (mpViewer != NULL)
+    if (mpViewer != NULL) {
         mpViewer->RequestFinish();
+    }
 
     // Wait until all thread have effectively stopped
-    while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished()  ||
-          mpLoopCloser->isRunningGBA())
-    {
+    while (!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() ||
+          mpLoopCloser->isRunningGBA()) {
         usleep(5000);
     }
-	if (mpViewer != NULL)
-	{
-        while(!mpViewer->isFinished())
+	if (mpViewer != NULL) {
+        while (!mpViewer->isFinished()) {}
         usleep(5000);
         mpViewer->Finalize();
 	}
 }
 
-Map* System::GetMap()
-{
-return this->mpMap;
+Map* System::GetMap() {
+    return this->mpMap;
 }
 
-bool System::SaveMap(const string &filename)
-{
+bool System::SaveMap(const string &filename) {
     cerr << "System Saving to " << filename << endl;
     return mpMap->Save(filename);
 }
 
-int System::GetStatus()
-{
+int System::GetStatus() {
     return mpTracker->mState;
 }
 
-void System::SetStatus(int status)
-{
+void System::SetStatus(int status) {
     mpTracker->mState = (enum Tracking::eTrackingState)status;
 }
 
-void System::SaveTrajectoryTUM(const string &filename)
-{
+void System::SaveTrajectoryTUM(const string &filename) {
     cout << endl << "Saving camera trajectory to " << filename << " ..." << endl;
 
     vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
-    sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+    sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
@@ -313,10 +306,9 @@ void System::SaveTrajectoryTUM(const string &filename)
     list<ORB_SLAM2::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
     list<double>::iterator lT = mpTracker->mlFrameTimes.begin();
     list<bool>::iterator lbL = mpTracker->mlbLost.begin();
-    for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(),
-        lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lT++, lbL++)
-    {
-        if(*lbL)
+    for (list<cv::Mat>::iterator lit = mpTracker->mlRelativeFramePoses.begin(),
+        lend = mpTracker->mlRelativeFramePoses.end(); lit != lend; lit++, lRit++, lT++, lbL++) {
+        if (*lbL)
             continue;
 
         KeyFrame* pKF = *lRit;

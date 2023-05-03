@@ -63,6 +63,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "Tracking.h"
+#include "FrameDrawer.h"
+#include "MapDrawer.h"
 #include "Map.h"
 #include "LocalMapping.h"
 #include "LoopClosing.h"
@@ -84,27 +86,23 @@ using std::string;
 
 // class PointCloudMapping;
 
-namespace ORB_SLAM2
-{
+namespace ORB_SLAM2 {
 
 class Viewer;
 class Map;
 class Tracking;
 class LocalMapping;
 class LoopClosing;
-// class Segment;
+class FrameDrawer;
+class MapDrawer;
 
-// static std::vector<std::s>
-
-class System
-{
+class System {
 public:
     // Input sensor
-    enum eSensor
-    {
-        MONOCULAR=0,
-        STEREO=1,
-        RGBD=2
+    enum eSensor {
+        MONOCULAR = 0,
+        STEREO = 1,
+        RGBD = 2
     };
 
 public:
@@ -186,6 +184,9 @@ private:
     std::thread* mptLocalMapping;
     std::thread* mptLoopClosing;
     std::thread* mptViewer;
+
+    FrameDrawer* mpFrameDrawer;
+    MapDrawer* mpMapDrawer;
 
     // Reset flag
     std::mutex mMutexReset;

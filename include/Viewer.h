@@ -22,6 +22,8 @@
 #ifndef VIEWER_H
 #define VIEWER_H
 
+#include "FrameDrawer.h"
+#include "MapDrawer.h"
 #include "Tracking.h"
 #include "System.h"
 
@@ -31,6 +33,8 @@ namespace ORB_SLAM2
 {
 
 class Tracking;
+class FrameDrawer;
+class MapDrawer;
 class System;
 
 class Viewer
@@ -38,6 +42,7 @@ class Viewer
 
 public:
     Viewer();
+    Viewer(System* pSystem, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Tracking *pTracking, const string &strSettingPath);
 
     virtual void Run();
 
@@ -58,6 +63,15 @@ public:
 
 protected:
     System* mpSystem;
+    FrameDrawer* mpFrameDrawer;
+    MapDrawer* mpMapDrawer;
+    Tracking* mpTracker;
+
+    double mT;
+    float mImageWidth, mImageHeight;
+
+    float mViewpointX, mViewpointY, mViewpointZ, mViewpointF;
+
     bool mbFinished;
     bool Stop();
     bool CheckFinish();

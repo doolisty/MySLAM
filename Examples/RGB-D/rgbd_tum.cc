@@ -60,18 +60,19 @@ int main(int argc, char **argv) {
     if (vstrImageFilenamesRGB.empty()) {
         cerr << endl << "No images found in provided path." << endl;
         return 1;
-    } else if (vstrImageFilenamesD.size()!=vstrImageFilenamesRGB.size()) {
+    } else if (vstrImageFilenamesD.size() != vstrImageFilenamesRGB.size()) {
         cerr << endl << "Different number of images for rgb and depth." << endl;
         return 1;
-    } else if (vstrImageFilenamesSeg.size() !=vstrImageFilenamesRGB.size()) {
+    } else if (vstrImageFilenamesSeg.size() != vstrImageFilenamesRGB.size()) {
         cerr << endl << "Different number of images for rgb and raw_seg." << endl;
         return 1;
     }
 
-    ORB_SLAM2::Viewer *viewer;
-    viewer = new ORB_SLAM2::Viewer();
+    // ORB_SLAM2::Viewer *viewer;
+    // viewer = new ORB_SLAM2::Viewer();
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM2::System SLAM(argv[1], argv[2], strPascalPNG, ORB_SLAM2::System::RGBD, viewer);
+    // ORB_SLAM2::System SLAM(argv[1], argv[2], strPascalPNG, ORB_SLAM2::System::RGBD, viewer);
+    ORB_SLAM2::System SLAM(argv[1], argv[2], strPascalPNG, ORB_SLAM2::System::RGBD);
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;
@@ -117,28 +118,29 @@ int main(int argc, char **argv) {
 
         // Wait to load the next frame
         double T = 0;
-        if(ni < nImages - 1) {
-            T = vTimestamps[ni+1] - tframe;
+        if (ni < nImages - 1) {
+            T = vTimestamps[ni + 1] - tframe;
         } else if (ni > 0) {
-            T = tframe - vTimestamps[ni-1];
+            T = tframe - vTimestamps[ni - 1];
         }
         
-        if(ttrack < T)
+        if (ttrack < T) {
             usleep((T - ttrack) * 1e6);
+        }
     }
 
     // Stop all threads
     SLAM.Shutdown();
 
     // Tracking time statistics
-    sort(vTimesTrack.begin(),vTimesTrack.end());
+    sort(vTimesTrack.begin(), vTimesTrack.end());
     float totaltime = 0;
-    for( int ni = 0; ni < nImages; ni++) {
+    for(int ni = 0; ni < nImages; ni++) {
         totaltime += vTimesTrack[ni];
     }
     cout << "-------" << endl << endl;
-    cout << "median tracking time: " << vTimesTrack[nImages/2] << endl;
-    cout << "mean tracking time: " << totaltime/nImages << endl;
+    cout << "median tracking time: " << vTimesTrack[nImages / 2] << endl;
+    cout << "mean tracking time: " << totaltime / nImages << endl;
 
     // Save camera trajectory
     SLAM.SaveTrajectoryTUM("CameraTrajectory.txt");

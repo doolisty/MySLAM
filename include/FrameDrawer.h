@@ -38,10 +38,10 @@ namespace ORB_SLAM2
 class Tracking;
 class Viewer;
 
-class FrameDrawer
-{
+class FrameDrawer {
 public:
     FrameDrawer();
+    FrameDrawer(Map* pMap);
 
     // Update info from the last processed frame.
     void Update(Tracking *pTracker);
