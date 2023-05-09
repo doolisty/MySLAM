@@ -21,16 +21,22 @@
 //  *--------------------------------------------------------------------------------------------------
 //  * DS-SLAM: A Semantic Visual SLAM towards Dynamic Environments
 // 　*　Author(s):
-//  * Chao Yu, Zuxin Liu, Xinjun Liu, Fugui Xie, Yi Yang, Qi Wei, Fei Qiao qiaofei@mail.tsinghua.edu.cn
+//  * Chao Yu, Zuxin Liu, Xinjun Liu, Fugui Xie, Yi Yang, Qi Wei, Fei Qiao
+//  qiaofei@mail.tsinghua.edu.cn
 //  * Created by Yu Chao@2018.12.03
 //  * --------------------------------------------------------------------------------------------------
-//  * DS-SLAM is a optimized SLAM system based on the famous ORB-SLAM2. If you haven't learn ORB_SLAM2 code, 
-//  * you'd better to be familiar with ORB_SLAM2 project first. Compared to ORB_SLAM2, 
-//  * we add anther two threads including semantic segmentation thread and densemap creation thread. 
-//  * You should pay attention to Frame.cc, ORBmatcher.cc, Pointcloudmapping.cc and Segment.cc.
-//  * 
+//  * DS-SLAM is a optimized SLAM system based on the famous ORB-SLAM2. If you
+//  haven't learn ORB_SLAM2 code,
+//  * you'd better to be familiar with ORB_SLAM2 project first. Compared to
+//  ORB_SLAM2,
+//  * we add anther two threads including semantic segmentation thread and
+//  densemap creation thread.
+//  * You should pay attention to Frame.cc, ORBmatcher.cc, Pointcloudmapping.cc
+//  and Segment.cc.
+//  *
 //  *　@article{murORB2,
-//  *　title={{ORB-SLAM2}: an Open-Source {SLAM} System for Monocular, Stereo and {RGB-D} Cameras},
+//  *　title={{ORB-SLAM2}: an Open-Source {SLAM} System for Monocular, Stereo
+//  and {RGB-D} Cameras},
 // 　*　author={Mur-Artal, Ra\'ul and Tard\'os, Juan D.},
 // 　* journal={IEEE Transactions on Robotics},
 // 　*　volume={33},
@@ -40,7 +46,8 @@
 // 　* year={2017}
 //  *　}
 //  * --------------------------------------------------------------------------------------------------
-//  * Copyright (C) 2018, iVip Lab @ EE, THU (https://ivip-tsinghua.github.io/iViP-Homepage/) and 
+//  * Copyright (C) 2018, iVip Lab @ EE, THU
+//  (https://ivip-tsinghua.github.io/iViP-Homepage/) and
 //  * Advanced Mechanism and Roboticized Equipment Lab. All rights reserved.
 //  *
 //  * Licensed under the GPLv3 License;
@@ -49,7 +56,6 @@
 //  * https://github.com/ivipsourcecode/DS-SLAM/blob/master/LICENSE
 //  *--------------------------------------------------------------------------------------------------
 //  */
-
 
 // #ifndef POINTCLOUDMAPPING_H
 // #define POINTCLOUDMAPPING_H
@@ -74,15 +80,17 @@
 //     typedef pcl::PointCloud<PointT> PointCloud;
 
 //     PointCloudMapping( double resolution_ );
-//     void Cloud_transform(pcl::PointCloud<pcl::PointXYZRGBA>& source, pcl::PointCloud<pcl::PointXYZRGBA>& out);
+//     void Cloud_transform(pcl::PointCloud<pcl::PointXYZRGBA>& source,
+//     pcl::PointCloud<pcl::PointXYZRGBA>& out);
 //     // Inserting a keyframe updates the map once
-//     void insertKeyFrame( KeyFrame* kf, cv::Mat& semantic_color,cv::Mat& semantic,cv::Mat& color, cv::Mat& depth );
-//     void shutdown();
-//     void viewer();
-//     void public_cloud( pcl::PointCloud<pcl::PointXYZRGBA> &cloud_kf);
+//     void insertKeyFrame( KeyFrame* kf, cv::Mat& semantic_color,cv::Mat&
+//     semantic,cv::Mat& color, cv::Mat& depth ); void shutdown(); void
+//     viewer(); void public_cloud( pcl::PointCloud<pcl::PointXYZRGBA>
+//     &cloud_kf);
 
 // protected:
-//     PointCloud::Ptr generatePointCloud(KeyFrame* kf, cv::Mat& semantic_color,cv::Mat& semantic, cv::Mat& color, cv::Mat& depth);
+//     PointCloud::Ptr generatePointCloud(KeyFrame* kf, cv::Mat&
+//     semantic_color,cv::Mat& semantic, cv::Mat& color, cv::Mat& depth);
 
 //     PointCloud::Ptr globalMap;
 

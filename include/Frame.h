@@ -1,46 +1,47 @@
 /**
-* This file is part of ORB-SLAM2.
-*
-* Copyright (C) 2014-2016 Raúl Mur-Artal <raulmur at unizar dot es> (University of Zaragoza)
-* For more information see <https://github.com/raulmur/ORB_SLAM2>
-*
-* ORB-SLAM2 is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* ORB-SLAM2 is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
-*/
+ * This file is part of ORB-SLAM2.
+ *
+ * Copyright (C) 2014-2016 Raúl Mur-Artal <raulmur at unizar dot es> (University
+ * of Zaragoza) For more information see <https://github.com/raulmur/ORB_SLAM2>
+ *
+ * ORB-SLAM2 is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * ORB-SLAM2 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  *--------------------------------------------------------------------------------------------------
  * DS-SLAM: A Semantic Visual SLAM towards Dynamic Environments
 　*　Author(s):
- * Chao Yu, Zuxin Liu, Xinjun Liu, Fugui Xie, Yi Yang, Qi Wei, Fei Qiao qiaofei@mail.tsinghua.edu.cn
+ * Chao Yu, Zuxin Liu, Xinjun Liu, Fugui Xie, Yi Yang, Qi Wei, Fei Qiao
+qiaofei@mail.tsinghua.edu.cn
  * Created by Yu Chao@2018.12.03
  * --------------------------------------------------------------------------------------------------
- * DS-SLAM is a optimized SLAM system based on the famous ORB-SLAM2. If you haven't learn ORB_SLAM2 code, 
- * you'd better to be familiar with ORB_SLAM2 project first. Compared to ORB_SLAM2, 
- * we add anther two threads including semantic segmentation thread and densemap creation thread. 
- * You should pay attention to Frame.cc, ORBmatcher.cc, Pointcloudmapping.cc and Segment.cc.
- * 
+ * DS-SLAM is a optimized SLAM system based on the famous ORB-SLAM2. If you
+haven't learn ORB_SLAM2 code,
+ * you'd better to be familiar with ORB_SLAM2 project first. Compared to
+ORB_SLAM2,
+ * we add anther two threads including semantic segmentation thread and densemap
+creation thread.
+ * You should pay attention to Frame.cc, ORBmatcher.cc, Pointcloudmapping.cc and
+Segment.cc.
+ *
  *　@article{murORB2,
- *　title={{ORB-SLAM2}: an Open-Source {SLAM} System for Monocular, Stereo and {RGB-D} Cameras},
-　*　author={Mur-Artal, Ra\'ul and Tard\'os, Juan D.},
-　* journal={IEEE Transactions on Robotics},
-　*　volume={33},
-　* number={5},
-　* pages={1255--1262},
-　* doi = {10.1109/TRO.2017.2705103},
-　* year={2017}
- *　}
+ *　title={{ORB-SLAM2}: an Open-Source {SLAM} System for Monocular, Stereo and
+{RGB-D} Cameras}, 　*　author={Mur-Artal, Ra\'ul and Tard\'os, Juan D.}, 　*
+journal={IEEE Transactions on Robotics}, 　*　volume={33}, 　* number={5}, 　*
+pages={1255--1262}, 　* doi = {10.1109/TRO.2017.2705103}, 　* year={2017} *　}
  * --------------------------------------------------------------------------------------------------
- * Copyright (C) 2018, iVip Lab @ EE, THU (https://ivip-tsinghua.github.io/iViP-Homepage/) and 
+ * Copyright (C) 2018, iVip Lab @ EE, THU
+(https://ivip-tsinghua.github.io/iViP-Homepage/) and
  * Advanced Mechanism and Roboticized Equipment Lab. All rights reserved.
  *
  * Licensed under the GPLv3 License;
@@ -53,23 +54,22 @@
 #ifndef FRAME_H
 #define FRAME_H
 
-#include <vector>
-#include <unordered_set>
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
+#include "KeyFrame.h"
 #include "MapPoint.h"
+#include "ORBVocabulary.h"
+#include "ORBextractor.h"
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
-#include "ORBVocabulary.h"
-#include "KeyFrame.h"
-#include "ORBextractor.h"
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/features2d/features2d.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 
-namespace ORB_SLAM2
-{
+namespace ORB_SLAM2 {
 
 // class Segment;
 #define FRAME_GRID_ROWS 48
@@ -78,189 +78,199 @@ namespace ORB_SLAM2
 class MapPoint;
 class KeyFrame;
 struct PtStat {
-    int num_dynamic;
-    int num_static;
+  int num_dynamic;
+  int num_static;
 
-    // scores to measure how dynamic it is
-    // 0 - completely static
-    // 1 - completely dynamic
-    double prev_score;
-    double curr_score;
+  // scores to measure how dynamic it is
+  // 0 - completely static
+  // 1 - completely dynamic
+  double prev_score;
+  double curr_score;
 
-    // initialized as static
-    PtStat() : num_dynamic(0), num_static(0), prev_score(0.0f), curr_score(0.0f) {}
+  // initialized as static
+  PtStat()
+      : num_dynamic(0), num_static(0), prev_score(0.0f), curr_score(0.0f) {}
 };
 
 class Frame {
-public:
-    Frame();
+ public:
+  Frame();
 
-    // Copy constructor.
-    Frame(const Frame &frame);
-    // void operator=(const Frame &frame);
+  // Copy constructor.
+  Frame(const Frame &frame);
+  // void operator=(const Frame &frame);
 
-    // Constructor for RGB-D cameras.
-    Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, const float &thDepth);
+  // Constructor for RGB-D cameras.
+  Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp,
+        ORBextractor *extractor, ORBVocabulary *voc, const float &thDepth);
 
-    // Constructor for MySLAM.
-    Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imSeg, const double &timeStamp, ORBextractor* extractor,
-          ORBVocabulary* voc, const float &thDepth, std::unordered_map<int, PtStat> *track_category_stat_ptr);
+  // Constructor for MySLAM.
+  Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imSeg,
+        const double &timeStamp, ORBextractor *extractor, ORBVocabulary *voc,
+        const float &thDepth,
+        std::unordered_map<int, PtStat> *track_category_stat_ptr);
 
-    // Extract ORB on the image. 0 for left image and 1 for right image.
-    void ExtractORBKeyPoints(const cv::Mat &im);
-    void ExtractORBDesp(const cv::Mat &im);
-    // Compute Bag of Words representation.
-    void ComputeBoW();
+  // Extract ORB on the image. 0 for left image and 1 for right image.
+  void ExtractORBKeyPoints(const cv::Mat &im);
+  void ExtractORBDesp(const cv::Mat &im);
+  // Compute Bag of Words representation.
+  void ComputeBoW();
 
-    // Set the camera pose.
-    void SetPose(cv::Mat Tcw);
+  // Set the camera pose.
+  void SetPose(cv::Mat Tcw);
 
-    // Computes rotation, translation and camera center matrices from the camera pose.
-    void UpdatePoseMatrices();
+  // Computes rotation, translation and camera center matrices from the camera
+  // pose.
+  void UpdatePoseMatrices();
 
-    // Returns the camera center.
-    inline cv::Mat GetCameraCenter(){
-        return mOw.clone();
-    }
+  // Returns the camera center.
+  inline cv::Mat GetCameraCenter() { return mOw.clone(); }
 
-    // Returns inverse of rotation
-    inline cv::Mat GetRotationInverse(){
-        return mRwc.clone();
-    }
+  // Returns inverse of rotation
+  inline cv::Mat GetRotationInverse() { return mRwc.clone(); }
 
-    // Check if a MapPoint is in the frustum of the camera
-    // and fill variables of the MapPoint to be used by the tracking
-    bool isInFrustum(MapPoint* pMP, float viewingCosLimit);
+  // Check if a MapPoint is in the frustum of the camera
+  // and fill variables of the MapPoint to be used by the tracking
+  bool isInFrustum(MapPoint *pMP, float viewingCosLimit);
 
-    // Compute the cell of a keypoint (return false if outside the grid)
-    bool PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY);
+  // Compute the cell of a keypoint (return false if outside the grid)
+  bool PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY);
 
-    vector<size_t> GetFeaturesInArea(const float &x, const float &y, const float &r, const int minLevel=-1, const int maxLevel=-1) const;
+  vector<size_t> GetFeaturesInArea(const float &x, const float &y,
+                                   const float &r, const int minLevel = -1,
+                                   const int maxLevel = -1) const;
 
-    // Search a match for each keypoint in the left image to a keypoint in the right image.
-    // If there is a match, depth is computed and the right coordinate associated to the left keypoint is stored.
-    void ComputeStereoMatches();
+  // Search a match for each keypoint in the left image to a keypoint in the
+  // right image. If there is a match, depth is computed and the right
+  // coordinate associated to the left keypoint is stored.
+  void ComputeStereoMatches();
 
-    // Associate a "right" coordinate to a keypoint if there is valid depth in the depthmap.
-    void ComputeStereoFromRGBD(const cv::Mat &imDepth);
+  // Associate a "right" coordinate to a keypoint if there is valid depth in the
+  // depthmap.
+  void ComputeStereoFromRGBD(const cv::Mat &imDepth);
 
-    // Backprojects a keypoint (if stereo/depth info available) into 3D world coordinates.
-    cv::Mat UnprojectStereo(const int &i);
+  // Backprojects a keypoint (if stereo/depth info available) into 3D world
+  // coordinates.
+  cv::Mat UnprojectStereo(const int &i);
 
-    // For semantic segmentation thread
-    void CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imS, int &moving_frame_cnt);
-   
-    void ProcessMovingObject(const cv::Mat &imgray);
-    void ProcessMovingObjectSeg(const cv::Mat &imgray, const cv::Mat &imSeg);
+  // For semantic segmentation thread
+  void CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray,
+                        const cv::Mat &imDepth, const cv::Mat &imS,
+                        int &moving_frame_cnt);
 
-    // Sets for abnormal points
-    std::vector<cv::Point2f> T_M;
-    double limit_dis_epi =1; 
-    double limit_of_check = 2120;
-    int limit_edge_corner = 5;
-    int flag_mov ;
-    std::vector<std::vector<cv::KeyPoint>> mvKeysTemp;
+  void ProcessMovingObject(const cv::Mat &imgray);
+  void ProcessMovingObjectSeg(const cv::Mat &imgray, const cv::Mat &imSeg);
 
-public:
-    // Vocabulary used for relocalization.
-    ORBVocabulary* mpORBvocabulary;
-    double orbExtractTime;
-    double movingDetectTime;
-    // Feature extractor. The right is used only in the stereo case.
-    ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
+  // Sets for abnormal points
+  std::vector<cv::Point2f> T_M;
+  double limit_dis_epi = 1;
+  double limit_of_check = 2120;
+  int limit_edge_corner = 5;
+  int flag_mov;
+  std::vector<std::vector<cv::KeyPoint>> mvKeysTemp;
 
-    // Frame timestamp.
-    double mTimeStamp;
+ public:
+  // Vocabulary used for relocalization.
+  ORBVocabulary *mpORBvocabulary;
+  double orbExtractTime;
+  double movingDetectTime;
+  // Feature extractor. The right is used only in the stereo case.
+  ORBextractor *mpORBextractorLeft, *mpORBextractorRight;
 
-    // Threshold close/far points. Close points are inserted from 1 view.
-    // Far points are inserted as in the monocular case from 2 views.
-    float mThDepth;
+  // Frame timestamp.
+  double mTimeStamp;
 
-    // Number of KeyPoints.
-    int N;
+  // Threshold close/far points. Close points are inserted from 1 view.
+  // Far points are inserted as in the monocular case from 2 views.
+  float mThDepth;
 
-    // Vector of keypoints (original for visualization) and undistorted (actually used by the system).
-    // In the stereo case, mvKeysUn is redundant as images must be rectified.
-    // In the RGB-D case, RGB images can be distorted.
-    std::vector<cv::KeyPoint> mvKeys, mvKeysRight;
-    
-    std::vector<cv::KeyPoint> mvKeysUn;
+  // Number of KeyPoints.
+  int N;
 
-    // Corresponding stereo coordinate and depth for each keypoint.
-    // "Monocular" keypoints have a negative value.
-    std::vector<float> mvuRight;
-    std::vector<float> mvDepth;
+  // Vector of keypoints (original for visualization) and undistorted (actually
+  // used by the system). In the stereo case, mvKeysUn is redundant as images
+  // must be rectified. In the RGB-D case, RGB images can be distorted.
+  std::vector<cv::KeyPoint> mvKeys, mvKeysRight;
 
-    // Bag of Words Vector structures.
-    DBoW2::BowVector mBowVec;
-    DBoW2::FeatureVector mFeatVec;
+  std::vector<cv::KeyPoint> mvKeysUn;
 
-    // ORB descriptor, each row associated to a keypoint.
-    cv::Mat mDescriptors, mDescriptorsRight;
+  // Corresponding stereo coordinate and depth for each keypoint.
+  // "Monocular" keypoints have a negative value.
+  std::vector<float> mvuRight;
+  std::vector<float> mvDepth;
 
-    // MapPoints associated to keypoints, NULL pointer if no association.
-    std::vector<MapPoint*> mvpMapPoints;
+  // Bag of Words Vector structures.
+  DBoW2::BowVector mBowVec;
+  DBoW2::FeatureVector mFeatVec;
 
-    // Flag to identify outlier associations.
-    std::vector<bool> mvbOutlier;
+  // ORB descriptor, each row associated to a keypoint.
+  cv::Mat mDescriptors, mDescriptorsRight;
 
-    // Keypoints are assigned to cells in a grid to reduce matching complexity when projecting MapPoints.
-    static float mfGridElementWidthInv;
-    static float mfGridElementHeightInv;
-    std::vector<std::size_t> mGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS];
+  // MapPoints associated to keypoints, NULL pointer if no association.
+  std::vector<MapPoint *> mvpMapPoints;
 
-    // Camera pose.
-    cv::Mat mTcw;
+  // Flag to identify outlier associations.
+  std::vector<bool> mvbOutlier;
 
-    // Current and Next Frame id.
-    static long unsigned int nNextId;
-    long unsigned int mnId;
+  // Keypoints are assigned to cells in a grid to reduce matching complexity
+  // when projecting MapPoints.
+  static float mfGridElementWidthInv;
+  static float mfGridElementHeightInv;
+  std::vector<std::size_t> mGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS];
 
-    // Reference Keyframe.
-    KeyFrame* mpReferenceKF;
+  // Camera pose.
+  cv::Mat mTcw;
 
-    // Scale pyramid info.
-    int mnScaleLevels;
-    float mfScaleFactor;
-    float mfLogScaleFactor;
-    vector<float> mvScaleFactors;
-    vector<float> mvInvScaleFactors;
-    vector<float> mvLevelSigma2;
-    vector<float> mvInvLevelSigma2;
+  // Current and Next Frame id.
+  static long unsigned int nNextId;
+  long unsigned int mnId;
 
-    // Undistorted Image Bounds (computed once).
-    static float mnMinX;
-    static float mnMaxX;
-    static float mnMinY;
-    static float mnMaxY;
-    static bool mbInitialComputations;
+  // Reference Keyframe.
+  KeyFrame *mpReferenceKF;
 
-    // Undistort keypoints given OpenCV distortion parameters.
-    // Only for the RGB-D case. Stereo must be already rectified!
-    // (called in the constructor).
-    void UndistortKeyPoints();
-    void InitializeScaleLevels();
-    static void InitializeClass();
-    // Assign keypoints to the grid for speed up feature matching (called in the constructor).
+  // Scale pyramid info.
+  int mnScaleLevels;
+  float mfScaleFactor;
+  float mfLogScaleFactor;
+  vector<float> mvScaleFactors;
+  vector<float> mvInvScaleFactors;
+  vector<float> mvLevelSigma2;
+  vector<float> mvInvLevelSigma2;
 
-    void AssignFeaturesToGrid();
+  // Undistorted Image Bounds (computed once).
+  static float mnMinX;
+  static float mnMaxX;
+  static float mnMinY;
+  static float mnMaxY;
+  static bool mbInitialComputations;
 
-    std::unordered_map<int, PtStat> *category_stat_ptr_;
+  // Undistort keypoints given OpenCV distortion parameters.
+  // Only for the RGB-D case. Stereo must be already rectified!
+  // (called in the constructor).
+  void UndistortKeyPoints();
+  void InitializeScaleLevels();
+  static void InitializeClass();
+  // Assign keypoints to the grid for speed up feature matching (called in the
+  // constructor).
 
-private:
-    // Rotation, translation and camera center
-    cv::Mat mRcw;
-    cv::Mat mtcw;
-    cv::Mat mRwc;
-    cv::Mat mOw;
+  void AssignFeaturesToGrid();
 
-    double dynamic_thresh_;
-    double alpha_;
-    double beta_;
+  std::unordered_map<int, PtStat> *category_stat_ptr_;
 
-    int moving_frame_cnt_;
+ private:
+  // Rotation, translation and camera center
+  cv::Mat mRcw;
+  cv::Mat mtcw;
+  cv::Mat mRwc;
+  cv::Mat mOw;
+
+  double dynamic_thresh_;
+  double alpha_;
+  double beta_;
+
+  int moving_frame_cnt_;
 };
 
-}// namespace ORB_SLAM
+}  // namespace ORB_SLAM2
 
-#endif // FRAME_H
+#endif  // FRAME_H

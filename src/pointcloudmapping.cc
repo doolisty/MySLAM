@@ -21,16 +21,22 @@
 //  *--------------------------------------------------------------------------------------------------
 //  * DS-SLAM: A Semantic Visual SLAM towards Dynamic Environments
 // 　*　Author(s):
-//  * Chao Yu, Zuxin Liu, Xinjun Liu, Fugui Xie, Yi Yang, Qi Wei, Fei Qiao qiaofei@mail.tsinghua.edu.cn
+//  * Chao Yu, Zuxin Liu, Xinjun Liu, Fugui Xie, Yi Yang, Qi Wei, Fei Qiao
+//  qiaofei@mail.tsinghua.edu.cn
 //  * Created by Yu Chao@2018.12.03
 //  * --------------------------------------------------------------------------------------------------
-//  * DS-SLAM is a optimized SLAM system based on the famous ORB-SLAM2. If you haven't learn ORB_SLAM2 code, 
-//  * you'd better to be familiar with ORB_SLAM2 project first. Compared to ORB_SLAM2, 
-//  * we add anther two threads including semantic segmentation thread and densemap creation thread. 
-//  * You should pay attention to Frame.cc, ORBmatcher.cc, Pointcloudmapping.cc and Segment.cc.
-//  * 
+//  * DS-SLAM is a optimized SLAM system based on the famous ORB-SLAM2. If you
+//  haven't learn ORB_SLAM2 code,
+//  * you'd better to be familiar with ORB_SLAM2 project first. Compared to
+//  ORB_SLAM2,
+//  * we add anther two threads including semantic segmentation thread and
+//  densemap creation thread.
+//  * You should pay attention to Frame.cc, ORBmatcher.cc, Pointcloudmapping.cc
+//  and Segment.cc.
+//  *
 //  *　@article{murORB2,
-//  *　title={{ORB-SLAM2}: an Open-Source {SLAM} System for Monocular, Stereo and {RGB-D} Cameras},
+//  *　title={{ORB-SLAM2}: an Open-Source {SLAM} System for Monocular, Stereo
+//  and {RGB-D} Cameras},
 // 　*　author={Mur-Artal, Ra\'ul and Tard\'os, Juan D.},
 // 　* journal={IEEE Transactions on Robotics},
 // 　*　volume={33},
@@ -40,7 +46,8 @@
 // 　* year={2017}
 //  *　}
 //  * --------------------------------------------------------------------------------------------------
-//  * Copyright (C) 2018, iVip Lab @ EE, THU (https://ivip-tsinghua.github.io/iViP-Homepage/) and 
+//  * Copyright (C) 2018, iVip Lab @ EE, THU
+//  (https://ivip-tsinghua.github.io/iViP-Homepage/) and
 //  * Advanced Mechanism and Roboticized Equipment Lab. All rights reserved.
 //  *
 //  * Licensed under the GPLv3 License;
@@ -50,14 +57,13 @@
 //  *--------------------------------------------------------------------------------------------------
 //  */
 
-
 // #include "pointcloudmapping.h"
 
 // #include "ros/ros.h"
 // #include "sensor_msgs/PointCloud2.h"
-// #include <tf/transform_broadcaster.h> 
+// #include <tf/transform_broadcaster.h>
 
-// pcl::PointCloud<pcl::PointXYZRGBA> pcl_filter; 
+// pcl::PointCloud<pcl::PointXYZRGBA> pcl_filter;
 // ros::Publisher pclPoint_pub;
 // ros::Publisher octomap_pub;
 // sensor_msgs::PointCloud2 pcl_point;
@@ -68,26 +74,28 @@
 // {
 //     this->resolution = resolution_;
 //     voxel.setLeafSize( resolution, resolution, resolution);
-//     this->sor.setMeanK(50);                                
-//     this->sor.setStddevMulThresh(1.0);                    
+//     this->sor.setMeanK(50);
+//     this->sor.setStddevMulThresh(1.0);
 //     globalMap = boost::make_shared< PointCloud >( );
 //     KfMap = boost::make_shared< PointCloud >( );
-//     viewerThread = boost::make_shared<thread>( bind(&PointCloudMapping::viewer, this ) );
+//     viewerThread = boost::make_shared<thread>(
+//     bind(&PointCloudMapping::viewer, this ) );
 // }
 
 // void PointCloudMapping::shutdown()
 // {
 //     {
-//         unique_lock<mutex> lck(shutDownMutex);  
+//         unique_lock<mutex> lck(shutDownMutex);
 //         shutDownFlag = true;
 //         keyFrameUpdated.notify_one();
 //     }
 //     viewerThread->join();
 // }
 
-// void PointCloudMapping::insertKeyFrame(KeyFrame* kf, cv::Mat& semantic_color,cv::Mat& semantic,cv::Mat& color, cv::Mat& depth)
+// void PointCloudMapping::insertKeyFrame(KeyFrame* kf, cv::Mat&
+// semantic_color,cv::Mat& semantic,cv::Mat& color, cv::Mat& depth)
 // {
-    
+
 //     unique_lock<mutex> lck(keyframeMutex);
 //     keyframes.push_back( kf );
 //     semanticImgs.push_back(semantic.clone() );
@@ -98,7 +106,9 @@
 //     keyFrameUpdated.notify_one();
 // }
 
-// pcl::PointCloud< PointCloudMapping::PointT >::Ptr PointCloudMapping::generatePointCloud(KeyFrame* kf, cv::Mat& semantic_color,cv::Mat& semantic, cv::Mat& color, cv::Mat& depth)
+// pcl::PointCloud< PointCloudMapping::PointT >::Ptr
+// PointCloudMapping::generatePointCloud(KeyFrame* kf, cv::Mat&
+// semantic_color,cv::Mat& semantic, cv::Mat& color, cv::Mat& depth)
 // {
 
 //     PointCloud::Ptr tmp( new PointCloud() );
@@ -111,19 +121,20 @@
 //             if (d < 0.01 || d > 8)
 //                 continue;
 // 	            int flag_exist=0;
-	     
+
 // 		        for (int i=-20;i <= 20; i+=3)
 // 		        {
 //                     for (int j=-20;j <= 20; j+=3)
 //                     {
 //                         int tempx = m + i;
 //                         int tempy = n + j ;
-            
+
 //                         if( tempx <= 0  ) tempx = 0;
-//                         if( tempx >= (Camera::height -1)  ) tempx = Camera::height-1;
-//                         if( tempy  <= 0  ) tempy =  0;
-//                         if( tempy >= (Camera::width -1) ) tempy = Camera::width -1;
-//                         if((int)semantic.ptr<uchar>(tempx)[tempy] == PEOPLE_LABLE)  
+//                         if( tempx >= (Camera::height -1)  ) tempx =
+//                         Camera::height-1; if( tempy  <= 0  ) tempy =  0; if(
+//                         tempy >= (Camera::width -1) ) tempy = Camera::width
+//                         -1; if((int)semantic.ptr<uchar>(tempx)[tempy] ==
+//                         PEOPLE_LABLE)
 //                         {
 //                             flag_exist=1;
 //                             break;
@@ -132,7 +143,7 @@
 //                     if(flag_exist==1)
 //                         break;
 // 		        }
-	
+
 //                 if(flag_exist == 1)
 //                     continue;
 
@@ -152,7 +163,7 @@
 // 	            {
 //                     p.b = semantic_color.ptr<uchar>(m)[n*3];
 //                     p.g = semantic_color.ptr<uchar>(m)[n*3+1];
-//                     p.r = semantic_color.ptr<uchar>(m)[n*3+2]; 
+//                     p.r = semantic_color.ptr<uchar>(m)[n*3+2];
 // 	            }
 // 	            tmp->points.push_back(p);
 //         }
@@ -163,16 +174,16 @@
 //     pcl::transformPointCloud( *tmp, *cloud, T.inverse().matrix());
 //     cloud->is_dense = false;
 
-//     cout<<"Generate point cloud for kf "<<kf->mnId<<", size="<<cloud->points.size()<<endl;
-//     return cloud;
+//     cout<<"Generate point cloud for kf "<<kf->mnId<<",
+//     size="<<cloud->points.size()<<endl; return cloud;
 // }
-
 
 // void PointCloudMapping::viewer()
 // {
 
 //     ros::NodeHandle n;
-//     pclPoint_pub = n.advertise<sensor_msgs::PointCloud2>("/ORB_SLAM2_PointMap_SegNetM/Point_Clouds",100000);
+//     pclPoint_pub =
+//     n.advertise<sensor_msgs::PointCloud2>("/ORB_SLAM2_PointMap_SegNetM/Point_Clouds",100000);
 //     ros::Rate r(5);
 //     while(1)
 //     {
@@ -202,16 +213,18 @@
 //         KfMap->clear();
 //         for ( size_t i=lastKeyframeSize; i<N ; i++ )
 //         {
-//             PointCloud::Ptr p = generatePointCloud( keyframes[i],semanticImgs_color[i], semanticImgs[i],colorImgs[i], depthImgs[i] );
+//             PointCloud::Ptr p = generatePointCloud(
+//             keyframes[i],semanticImgs_color[i], semanticImgs[i],colorImgs[i],
+//             depthImgs[i] );
 // 	        *KfMap += *p;
-// 	        *globalMap += *p;	    
+// 	        *globalMap += *p;
 //         }
-	
+
 // 	    PointCloud::Ptr tmp1(new PointCloud());
 //         voxel.setInputCloud( KfMap );
 //         voxel.filter( *tmp1 );
-//         KfMap->swap( *tmp1 );	
-//         pcl_cloud_kf = *KfMap;	
+//         KfMap->swap( *tmp1 );
+//         pcl_cloud_kf = *KfMap;
 
 // 	    Cloud_transform(pcl_cloud_kf,pcl_filter);
 // 	    pcl::toROSMsg(pcl_filter, pcl_point);
@@ -223,12 +236,14 @@
 
 // }
 
-// void PointCloudMapping::public_cloud( pcl::PointCloud< pcl::PointXYZRGBA >& cloud_kf )
+// void PointCloudMapping::public_cloud( pcl::PointCloud< pcl::PointXYZRGBA >&
+// cloud_kf )
 // {
-// 	cloud_kf =pcl_cloud_kf; 
+// 	cloud_kf =pcl_cloud_kf;
 // }
 
-// void PointCloudMapping::Cloud_transform(pcl::PointCloud<pcl::PointXYZRGBA>& source, pcl::PointCloud<pcl::PointXYZRGBA>& out)
+// void PointCloudMapping::Cloud_transform(pcl::PointCloud<pcl::PointXYZRGBA>&
+// source, pcl::PointCloud<pcl::PointXYZRGBA>& out)
 // {
 // 	pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud_filtered;
 // 	Eigen::Matrix4f m;
