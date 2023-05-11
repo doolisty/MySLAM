@@ -965,6 +965,7 @@ static void computeDescriptors(const cv::Mat& image,
     computeOrbDescriptor(keypoints[i], image, &pattern[0],
                          descriptors.ptr((int)i));
 }
+
 void ORBextractor::DeleteOneRowOfMat(cv::Mat& object, int num) {
   if (num < 0 || num >= object.rows) {
     cout << " wrong row number! " << endl;
@@ -1064,6 +1065,7 @@ int ORBextractor::CheckMovingKeyPoints(
   }
   return flag_orb_mov;
 }
+
 void ORBextractor::operator()(cv::InputArray _image, cv::InputArray _mask,
                               vector<vector<cv::KeyPoint>>& _keypoints) {
   if (_image.empty()) {
@@ -1127,6 +1129,7 @@ void ORBextractor::ProcessDesp(cv::InputArray _image, cv::InputArray _mask,
     _mKeypoints.insert(_mKeypoints.end(), keypoints.begin(), keypoints.end());
   }
 }
+
 void ORBextractor::ComputePyramid(cv::Mat image) {
   for (int level = 0; level < nlevels; ++level) {
     float scale = mvInvScaleFactor[level];

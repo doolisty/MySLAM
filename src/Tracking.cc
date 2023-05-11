@@ -75,9 +75,10 @@ using namespace std;
 
 namespace ORB_SLAM2 {
 
-Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, Map* pMap,
-                   KeyFrameDatabase* pKFDB, const string& strSettingPath,
-                   const int sensor, const string& pascal_png)
+Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer,
+                   MapDrawer* pMapDrawer, Map* pMap, KeyFrameDatabase* pKFDB,
+                   const string& strSettingPath, const int sensor,
+                   const string& pascal_png)
     : mSensor(sensor),
       mbOnlyTracking(false),
       mbVO(false),
@@ -86,6 +87,9 @@ Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, Map* pMap,
       mpKeyFrameDB(pKFDB),
       mpInitializer(static_cast<Initializer*>(NULL)),
       mpSystem(pSys),
+      mpViewer(NULL),
+      mpFrameDrawer(pFrameDrawer),
+      mpMapDrawer(pMapDrawer),
       mpMap(pMap),
       mnLastRelocFrameId(0),
       moving_frame_cnt_(0) {
@@ -313,9 +317,7 @@ void Tracking::Track() {
       MonocularInitialization();
     }
 
-    if (mpViewer != NULL) {
-      mpViewer->UpdateFrame(this);
-    }
+    mpFrameDrawer->Update(this);
 
     if (mState != OK) {
       return;
@@ -358,9 +360,7 @@ void Tracking::Track() {
     }
 
     // Update drawer
-    if (mpViewer != NULL) {
-      mpViewer->UpdateFrame(this);
-    }
+    mpFrameDrawer->Update(this);
 
     // If tracking were good, check if we insert a keyframe
     if (bOK) {
@@ -375,9 +375,8 @@ void Tracking::Track() {
         mVelocity = cv::Mat();
       }
 
-      if (mpViewer != NULL) {
-        mpViewer->SetCurrentCameraPose(mCurrentFrame.mTcw);
-      }
+      mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+
       // Clean temporal point matches
       for (int i = 0; i < mCurrentFrame.N; i++) {
         MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
@@ -494,7 +493,7 @@ void Tracking::StereoInitialization() {
 
     mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
-    if (mpViewer != NULL) mpViewer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+    mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
     mState = OK;
   }
@@ -653,7 +652,7 @@ void Tracking::CreateInitialMapMonocular() {
 
   mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
-  if (mpViewer != NULL) mpViewer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+  mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
   mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 

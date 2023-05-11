@@ -74,7 +74,6 @@ pages={1255--1262}, 　* doi = {10.1109/TRO.2017.2705103}, 　* year={2017} *　
 #include "Viewer.h"
 // #include "Segment.h"
 #include "Camera.h"
-#include "PangolinViewer.h"
 
 // #include "pointcloudmapping.h"
 #include <pcl/common/projection_matrix.h>
