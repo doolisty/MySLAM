@@ -23,9 +23,12 @@
 
 #include <mutex>
 #include <set>
+#include <vector>
+#include <map>
 
 #include "KeyFrame.h"
 #include "MapPoint.h"
+#include "ORBVocabulary.h"
 
 namespace ORB_SLAM2 {
 
@@ -51,10 +54,10 @@ class Map {
   long unsigned KeyFramesInMap();
   long unsigned int GetMaxKFid();
 
-  bool Save(const string& filename);
-  bool Load(const string& filename, ORBVocabulary& voc);
+  bool Save(const std::string& filename);
+  bool Load(const std::string& filename, ORBVocabulary& voc);
 
-  vector<KeyFrame*> mvpKeyFrameOrigins;
+  std::vector<KeyFrame*> mvpKeyFrameOrigins;
 
   std::mutex mMutexMapUpdate;
   // This avoid that two points are created simultaneously in separate threads
@@ -69,11 +72,11 @@ class Map {
   long unsigned int mnMaxKFid;
   std::mutex mMutexMap;
 
-  void _WriteMapPoint(ofstream& f, MapPoint* mp);
-  void _WriteKeyFrame(ofstream& f, KeyFrame* kf,
-                      map<MapPoint*, unsigned long int>& idx_of_mp);
-  MapPoint* _ReadMapPoint(ifstream& f);
-  KeyFrame* _ReadKeyFrame(ifstream& f, ORBVocabulary& voc,
+  void _WriteMapPoint(std::ofstream& f, MapPoint* mp);
+  void _WriteKeyFrame(std::ofstream& f, KeyFrame* kf,
+                      std::map<MapPoint*, unsigned long int>& idx_of_mp);
+  MapPoint* _ReadMapPoint(std::ifstream& f);
+  KeyFrame* _ReadKeyFrame(std::ifstream& f, ORBVocabulary& voc,
                           std::vector<MapPoint*> amp, ORBextractor* ex);
 };
 

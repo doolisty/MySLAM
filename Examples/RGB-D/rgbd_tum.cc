@@ -68,10 +68,10 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    ORB_SLAM2::Viewer *viewer;
-    viewer = new ORB_SLAM2::Viewer();
+    // ORB_SLAM2::Viewer *viewer;
+    // viewer = new ORB_SLAM2::Viewer();
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM2::System SLAM(argv[1], argv[2], strPascalPNG, ORB_SLAM2::System::RGBD, viewer);
+    ORB_SLAM2::System SLAM(argv[1], argv[2], strPascalPNG, ORB_SLAM2::System::RGBD);
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;

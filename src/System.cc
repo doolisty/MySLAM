@@ -151,8 +151,12 @@ System::System(const string &strVocFile, const string &strSettingsFile,
   // (it will live in the main thread of execution, the one that called this
   // constructor)
 
+  // Create Drawers. These are used by the Viewer
+  mpFrameDrawer = new FrameDrawer(mpMap);
+  mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
+
   mpTracker =
-      new Tracking(this, mpVocabulary, mpMap /*, mpPointCloudMapping*/,
+      new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer, mpMap,
                    mpKeyFrameDatabase, strSettingsFile, mSensor, pascal_png);
   cout << "[Tracking] running in thread " << hex << this_thread::get_id()
        << endl;
@@ -185,12 +189,15 @@ System::System(const string &strVocFile, const string &strSettingsFile,
   mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
   // Initialize the Viewer thread and launch
-  mpViewer = pViewer;
-  if (mpViewer != NULL) {
-    mpViewer->Register(this);
-    mptViewer = new thread(&Viewer::Run, mpViewer);
-    mpTracker->SetViewer(mpViewer);
-  }
+//   mpViewer = pViewer;
+//   if (mpViewer != NULL) {
+//     mpViewer->Register(this);
+//     mptViewer = new thread(&Viewer::Run, mpViewer);
+//     mpTracker->SetViewer(mpViewer);
+//   }
+  mpViewer =
+      new Viewer(this, mpFrameDrawer, mpMapDrawer, mpTracker, strSettingsFile);
+  mptViewer = new thread(&Viewer::Run, mpViewer);
 }
 
 cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap,
@@ -254,17 +261,18 @@ void System::Shutdown() {
   mpLocalMapper->RequestFinish();
   mpLoopCloser->RequestFinish();
   // mpSegment->RequestFinish();
-  if (mpViewer != NULL) mpViewer->RequestFinish();
+//   if (mpViewer != NULL) mpViewer->RequestFinish();
+  if (mpViewer) {
+    mpViewer->RequestFinish();
+    while (!mpViewer->isFinished()) usleep(5000);
+  }
 
   // Wait until all thread have effectively stopped
   while (!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() ||
          mpLoopCloser->isRunningGBA()) {
     usleep(5000);
   }
-  if (mpViewer != NULL) {
-    while (!mpViewer->isFinished()) usleep(5000);
-    mpViewer->Finalize();
-  }
+  if (mpViewer) pangolin::BindToContext("ORB-SLAM2: Map Viewer");
 }
 
 Map *System::GetMap() { return this->mpMap; }

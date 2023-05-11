@@ -70,6 +70,8 @@ pages={1255--1262}, 　* doi = {10.1109/TRO.2017.2705103}, 　* year={2017} *　
 #include "ORBVocabulary.h"
 #include "Tracking.h"
 #include "Viewer.h"
+#include "FrameDrawer.h"
+#include "MapDrawer.h"
 // #include "Segment.h"
 #include "Camera.h"
 
@@ -91,7 +93,8 @@ class Map;
 class Tracking;
 class LocalMapping;
 class LoopClosing;
-// class Segment;
+class FrameDrawer;
+class MapDrawer;
 
 // static std::vector<std::s>
 
@@ -190,6 +193,9 @@ class System {
   std::thread* mptLocalMapping;
   std::thread* mptLoopClosing;
   std::thread* mptViewer;
+
+  FrameDrawer* mpFrameDrawer;
+  MapDrawer* mpMapDrawer;
 
   // Reset flag
   std::mutex mMutexReset;

@@ -34,6 +34,7 @@ namespace ORB_SLAM2 {
 class MapDrawer {
  public:
   MapDrawer(const string &strSettingPath);
+  MapDrawer(Map *pMap, const string &strSettingPath);
 
   Map *mpMap;
 

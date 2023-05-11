@@ -39,6 +39,7 @@ class Viewer;
 class FrameDrawer {
  public:
   FrameDrawer();
+  FrameDrawer(Map* pMap);
 
   // Update info from the last processed frame.
   void Update(Tracking *pTracker);

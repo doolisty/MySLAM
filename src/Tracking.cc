@@ -76,8 +76,8 @@ using namespace std;
 namespace ORB_SLAM2 {
 
 Tracking::Tracking(
-    System* pSys, ORBVocabulary* pVoc,
-    Map* pMap /*, boost::shared_ptr<PointCloudMapping> pPointCloud*/,
+    System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer,
+    MapDrawer* pMapDrawer, Map* pMap,
     KeyFrameDatabase* pKFDB, const string& strSettingPath, const int sensor,
     const string& pascal_png)
     : mSensor(sensor),
@@ -88,6 +88,9 @@ Tracking::Tracking(
       mpKeyFrameDB(pKFDB),
       mpInitializer(static_cast<Initializer*>(NULL)),
       mpSystem(pSys),
+      mpViewer(NULL),
+      mpFrameDrawer(pFrameDrawer),
+      mpMapDrawer(pMapDrawer),
       mpMap(pMap),
       mnLastRelocFrameId(0) {
   if (pMap->KeyFramesInMap() == 0)
@@ -306,7 +309,7 @@ void Tracking::Track() {
     else
       MonocularInitialization();
 
-    if (mpViewer != NULL) mpViewer->UpdateFrame(this);
+    mpFrameDrawer->Update(this);
 
     if (mState != OK) return;
   } else {
@@ -342,7 +345,7 @@ void Tracking::Track() {
       mState = LOST;
 
     // Update drawer
-    if (mpViewer != NULL) mpViewer->UpdateFrame(this);
+    mpFrameDrawer->Update(this);
 
     // If tracking were good, check if we insert a keyframe
     if (bOK) {
@@ -356,7 +359,7 @@ void Tracking::Track() {
       } else
         mVelocity = cv::Mat();
 
-      if (mpViewer != NULL) mpViewer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+      mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
       // Clean temporal point matches
       for (int i = 0; i < mCurrentFrame.N; i++) {
@@ -469,7 +472,7 @@ void Tracking::StereoInitialization() {
 
     mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
-    if (mpViewer != NULL) mpViewer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+    mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
     mState = OK;
   }
@@ -628,7 +631,7 @@ void Tracking::CreateInitialMapMonocular() {
 
   mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
-  if (mpViewer != NULL) mpViewer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+  mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
   mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 

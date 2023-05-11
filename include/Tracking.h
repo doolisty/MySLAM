@@ -71,6 +71,8 @@ using std::string;
 namespace ORB_SLAM2 {
 
 class Viewer;
+class FrameDrawer;
+class MapDrawer;
 class Map;
 class LocalMapping;
 class LoopClosing;
@@ -79,8 +81,8 @@ class System;
 
 class Tracking {
  public:
-  Tracking(System* pSys, ORBVocabulary* pVoc,
-           Map* pMap /*, boost::shared_ptr<PointCloudMapping> pPointCloud*/,
+  Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer,
+           MapDrawer* pMapDrawer, Map* pMap,
            KeyFrameDatabase* pKFDB, const string& strSettingPath,
            const int sensor, const string& pascal_png);
 
@@ -218,6 +220,8 @@ class Tracking {
 
   // Drawers
   Viewer* mpViewer;
+  FrameDrawer* mpFrameDrawer;
+  MapDrawer* mpMapDrawer;
 
   // Map
   Map* mpMap;
