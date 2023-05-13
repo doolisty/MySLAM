@@ -132,7 +132,7 @@ class Frame {
 
   // For semantic segmentation thread
   void CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray,
-                        const cv::Mat &imDepth, const cv::Mat &imS);
+                        const cv::Mat &imDepth, const cv::Mat &imS, cv::Mat &imDyna);
 
   void ProcessMovingObject(const cv::Mat &imgray);
   // Sets for abnormal points

@@ -209,7 +209,7 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
   movingDetectTime = mCurrentFrame.movingDetectTime;
 
   // Remove dynamic points
-  mCurrentFrame.CalculEverything(mImRGB, mImGray, mImDepth, mImSeg);
+  mCurrentFrame.CalculEverything(mImRGB, mImGray, mImDepth, mImSeg, mImGrayDynamic);
 
   cv::Mat mImS_color = mImSeg.clone();
   cv::cvtColor(mImSeg, mImS_color, CV_GRAY2BGR);

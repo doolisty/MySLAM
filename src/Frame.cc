@@ -209,7 +209,8 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth,
 }
 
 void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray,
-                             const cv::Mat &imDepth, const cv::Mat &imS) {
+                             const cv::Mat &imDepth, const cv::Mat &imS, cv::Mat &imDyna) {
+  imDyna = imRGB;
   int flagprocess = 0;
   for (int m = 0; m < imS.rows; m += 1) {
     for (int n = 0; n < imS.cols; n += 1) {
@@ -225,6 +226,18 @@ void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray,
   }
 
   if (!T_M.empty() && flagprocess) {
+    const float r = 5;
+    cv::Point2f pt1, pt2;
+
+    for (auto &pt : T_M) {
+      pt1.x = pt.x - r;
+      pt1.y = pt.y - r;
+      pt2.x = pt.x + r;
+      pt2.y = pt.y + r;
+      cv::rectangle(imDyna, pt1, pt2, cv::Scalar(0, 0, 255));
+      cv::circle(imDyna, pt, 2, cv::Scalar(0, 0, 255), -1);
+    }
+
     std::chrono::steady_clock::time_point tc1 =
         std::chrono::steady_clock::now();
     flag_mov =

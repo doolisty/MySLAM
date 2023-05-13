@@ -108,6 +108,17 @@ cv::Mat FrameDrawer::DrawFrame() {
         }
       }
     }
+
+    for (auto &pt : mvDynaPts) {
+        cv::Point2f pt1, pt2;
+        pt1.x = pt.x - r;
+        pt1.y = pt.y - r;
+        pt2.x = pt.x + r;
+        pt2.y = pt.y + r;
+
+        cv::rectangle(im, pt1, pt2, cv::Scalar(0, 0, 255));
+        cv::circle(im, pt, 2, cv::Scalar(0, 0, 255), -1);
+    }
   }
 
   cv::Mat imWithInfo;
@@ -153,6 +164,7 @@ void FrameDrawer::Update(Tracking *pTracker) {
   unique_lock<mutex> lock(mMutex);
   pTracker->mImGray.copyTo(mIm);
   mvCurrentKeys = pTracker->mCurrentFrame.mvKeys;
+  mvDynaPts = pTracker->mCurrentFrame.T_M;
   N = mvCurrentKeys.size();
   mvbVO = vector<bool>(N, false);
   mvbMap = vector<bool>(N, false);

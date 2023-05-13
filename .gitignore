@@ -27,3 +27,5 @@ lib/
 # depth contour extraction
 *.png
 dip_out/
+
+Examples/RGB-D/*.txt

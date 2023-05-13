@@ -124,6 +124,7 @@ class Tracking {
   // Current Frame
   Frame mCurrentFrame;
   cv::Mat mImGray;
+  cv::Mat mImGrayDynamic;
   cv::Mat mImS;
   cv::Mat mImS_C;
   cv::Mat mImRGB;    // adding for color point map  by zoe
