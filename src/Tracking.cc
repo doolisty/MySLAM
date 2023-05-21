@@ -78,7 +78,7 @@ namespace ORB_SLAM2 {
 Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer,
                    MapDrawer* pMapDrawer, Map* pMap, KeyFrameDatabase* pKFDB,
                    const string& strSettingPath, const int sensor,
-                   const string& pascal_png)
+                   const string& pascal_png, DynaParams dyna_params)
     : mSensor(sensor),
       mbOnlyTracking(false),
       mbVO(false),
@@ -92,7 +92,8 @@ Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer,
       mpMapDrawer(pMapDrawer),
       mpMap(pMap),
       mnLastRelocFrameId(0),
-      moving_frame_cnt_(0) {
+      moving_frame_cnt_(0),
+      dyna_params_(dyna_params) {
   if (pMap->KeyFramesInMap() == 0)
     mState = NO_IMAGES_YET;
   else {
@@ -169,7 +170,7 @@ Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer,
 
   // init label PEOPLE
   PtStat people_stat;
-  people_stat.curr_score = 0.6;
+  people_stat.curr_score = dyna_params_.people_init_score;
   category_stat_track_[PEOPLE_LABLE] = people_stat;
 }
 
@@ -210,7 +211,7 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
 
   mCurrentFrame =
       Frame(mImGray, mImDepth, mImSeg, timestamp, mpORBextractorLeft,
-            mpORBVocabulary, mThDepth, &category_stat_track_);
+            mpORBVocabulary, mThDepth, &category_stat_track_, dyna_params_);
   orbExtractTime = mCurrentFrame.orbExtractTime;
   movingDetectTime = mCurrentFrame.movingDetectTime;
 
@@ -231,20 +232,30 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
 }
 
 bool Tracking::_Track_full() {
+  // printf("########## in _Track_full() ##########\n");
   bool bOK;
+  // printf("mState == %d\n", mState);
   if (mState == OK) {
     // Local Mapping might have changed some MapPoints tracked in last frame
     CheckReplacedInLastFrame();
 
     if (mVelocity.empty() || mCurrentFrame.mnId < mnLastRelocFrameId + 2) {
       bOK = TrackReferenceKeyFrame();
+      // printf("[branch 1.1.1] bOK = %d\n", bOK);
     } else {
       bOK = TrackWithMotionModel();
-      if (!bOK) bOK = TrackReferenceKeyFrame();
+      // printf("[branch 1.1.2] bOK = %d\n", bOK);
+      if (!bOK) {
+        bOK = TrackReferenceKeyFrame();
+        // printf("[branch 1.1.2.1] bOK = %d\n", bOK);
+      }
     }
   } else {
     bOK = Relocalization();
+    // printf("[branch 1.2] bOK = %d\n", bOK);
   }
+  // printf("[finally] bOK = %d\n", bOK);
+  // printf("#####################################\n");
   return bOK;
 }
 
@@ -325,6 +336,7 @@ void Tracking::Track() {
   } else {
     // System is initialized. Track Frame.
     bool bOK;
+    // printf("step 1: bOK = %d\n", bOK);
 
     // Initial camera pose estimation using motion model or relocalization (if
     // tracking is lost)
@@ -332,9 +344,12 @@ void Tracking::Track() {
       // Local Mapping is activated. This is the normal behaviour, unless
       // you explicitly activate the "only tracking" mode.
       bOK = _Track_full();
+      // printf("branch 1.1\n");
     } else {
       bOK = _Track_loc_only();
+      // printf("branch 1.2\n");
     }
+    // printf("step 2: bOK = %d\n", bOK);
     mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
     // If we have an initial estimation of the camera pose and matching. Track
@@ -342,6 +357,7 @@ void Tracking::Track() {
     if (!mbOnlyTracking) {
       if (bOK) {
         bOK = TrackLocalMap();
+        // printf("branch 2.1\n");
       }
     } else {
       // mbVO true means that there are few matches to MapPoints in the map. We
@@ -350,8 +366,10 @@ void Tracking::Track() {
       // local map again.
       if (bOK && !mbVO) {
         bOK = TrackLocalMap();
+        // printf("branch 2.2\n");
       }
     }
+    // printf("step 3: bOK = %d\n", bOK);
 
     if (bOK) {
       mState = OK;
@@ -683,8 +701,12 @@ bool Tracking::TrackReferenceKeyFrame() {
 
   int nmatches =
       matcher.SearchByBoW(mpReferenceKF, mCurrentFrame, vpMapPointMatches);
+  
+  // printf("[TrackReferenceKeyFrame] step 1 (nmatches = %d)\n", nmatches);
 
   if (nmatches < 15) return false;
+
+  // printf("[TrackReferenceKeyFrame] step 2\n");
 
   mCurrentFrame.mvpMapPoints = vpMapPointMatches;
   mCurrentFrame.SetPose(mLastFrame.mTcw);
@@ -707,6 +729,8 @@ bool Tracking::TrackReferenceKeyFrame() {
         nmatchesMap++;
     }
   }
+
+  // printf("[TrackReferenceKeyFrame] nmatchesMap = %d\n", nmatchesMap);
 
   return nmatchesMap >= 10;
 }
@@ -796,7 +820,11 @@ bool Tracking::TrackWithMotionModel() {
                                           mSensor == System::MONOCULAR);
   }
 
+  // printf("[TrackWithMotionModel] step 1 (nmatches = %d)\n", nmatches);
+
   if (nmatches < 20) return false;
+
+  // printf("[TrackWithMotionModel] step 2\n");
 
   // Optimize frame pose with all matches
   Optimizer::PoseOptimization(&mCurrentFrame);
@@ -822,6 +850,8 @@ bool Tracking::TrackWithMotionModel() {
     mbVO = nmatchesMap < 10;
     return nmatches > 20;
   }
+
+  // printf("[TrackWithMotionModel] finally (nmatches = %d)\n", nmatches);
 
   return nmatchesMap >= 10;
 }

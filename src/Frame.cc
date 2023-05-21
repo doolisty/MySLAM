@@ -218,16 +218,16 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth,
 Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth,
              const cv::Mat &imSeg, const double &timeStamp,
              ORBextractor *extractor, ORBVocabulary *voc, const float &thDepth,
-             std::unordered_map<int, PtStat> *track_category_stat_ptr)
+             std::unordered_map<int, PtStat> *track_category_stat_ptr, DynaParams dyna_params)
     : mpORBvocabulary(voc),
       mpORBextractorLeft(extractor),
       mpORBextractorRight(static_cast<ORBextractor *>(NULL)),
       mTimeStamp(timeStamp),
       mThDepth(thDepth),
       category_stat_ptr_(track_category_stat_ptr),
-      dynamic_thresh_(0.6),
-      alpha_(0.4),
-      beta_(15.0) {
+      dynamic_thresh_(dyna_params.dynamic_thresh),
+      alpha_(dyna_params.alpha),
+      beta_(dyna_params.beta) {
   // Frame ID
   mnId = nNextId++;
 
@@ -272,11 +272,12 @@ void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray,
     }
   }
 
-  std::cout << "dynamic labels: ";
-  for (auto it = dynamic_labels.begin(); it != dynamic_labels.end(); ++it) {
-    std::cout << std::dec << *it << ", ";
-  }
-  std::cout << std::endl;
+  // std::cout << "dynamic labels: ";
+  // for (auto it = dynamic_labels.begin(); it != dynamic_labels.end(); ++it) {
+  //   std::cout << std::dec << *it << ", ";
+  // }
+  // std::cout << std::endl;
+
   // int flagprocess = 0;
   // for (int m = 0; m < imS.rows; m += 1)  {
   //     for (int n = 0; n < imS.cols; n += 1) {
@@ -303,8 +304,8 @@ void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray,
     double tc =
         std::chrono::duration_cast<std::chrono::duration<double>>(tc2 - tc1)
             .count();
-    std::cout << "[moving No." << std::dec << moving_frame_cnt
-              << "] check time = " << tc * 1000 << std::endl;
+    // std::cout << "[moving No." << std::dec << moving_frame_cnt
+    //           << "] check time = " << tc * 1000 << std::endl;
   }
 
   ExtractORBDesp(imGray);

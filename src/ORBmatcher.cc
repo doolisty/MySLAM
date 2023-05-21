@@ -1190,6 +1190,8 @@ int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame,
   const bool bForward = tlc.at<float>(2) > Camera::b && !bMono;
   const bool bBackward = -tlc.at<float>(2) > Camera::b && !bMono;
 
+  // printf("[SearchByProjection] LastFrame.N = %d, CurrentFrame.N = %d\n", LastFrame.N, CurrentFrame.N);
+
   for (int i = 0; i < LastFrame.N; i++) {
     MapPoint *pMP = LastFrame.mvpMapPoints[i];
 

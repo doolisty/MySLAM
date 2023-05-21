@@ -95,7 +95,7 @@ class LocalMapping;
 class LoopClosing;
 class FrameDrawer;
 class MapDrawer;
-// class PangolinViewer;
+struct DynaParams;
 
 class System {
  public:
@@ -108,7 +108,7 @@ class System {
   System(const string& strVocFile, const string& strSettingsFile,
          const eSensor sensor, const bool bUseViewer = true){};
   System(const string& strVocFile, const string& strSettingsFile,
-         const string& pascal_png, const eSensor sensor = MONOCULAR,
+         const string& pascal_png, DynaParams dyna_params, const eSensor sensor = MONOCULAR,
          Viewer* v = NULL, Map* m = NULL, ORBVocabulary* voc = NULL);
 
   // Process the given rgbd frame. Depthmap must be registered to the RGB frame.

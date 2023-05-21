@@ -92,6 +92,15 @@ struct PtStat {
       : num_dynamic(0), num_static(0), prev_score(0.0f), curr_score(0.0f) {}
 };
 
+struct DynaParams {
+  double people_init_score;
+  double dynamic_thresh;
+  double alpha;
+  double beta;
+
+  DynaParams() : people_init_score(0.6), dynamic_thresh(0.6), alpha(0.4), beta(15.0) {}
+};
+
 class Frame {
  public:
   Frame();
@@ -108,7 +117,7 @@ class Frame {
   Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imSeg,
         const double &timeStamp, ORBextractor *extractor, ORBVocabulary *voc,
         const float &thDepth,
-        std::unordered_map<int, PtStat> *track_category_stat_ptr);
+        std::unordered_map<int, PtStat> *track_category_stat_ptr, DynaParams dyna_params);
 
   // Extract ORB on the image. 0 for left image and 1 for right image.
   void ExtractORBKeyPoints(const cv::Mat &im);

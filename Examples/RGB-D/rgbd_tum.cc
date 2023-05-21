@@ -30,9 +30,11 @@
 
 #include <opencv2/core/core.hpp>
 
+#include <Frame.h>
 #include <System.h>
 
 using namespace std;
+struct ORB_SLAM2::DynaParams;
 
 void LoadImages(const string& strAssociationFilename, vector<string>& vstrImageFilenamesRGB,
                 vector<string>& vstrImageFilenamesD,  vector<string>& vstrImageFilenamesSeg,
@@ -41,8 +43,8 @@ void LoadImages(const string& strAssociationFilename, vector<string>& vstrImageF
 // Usage: ./rgbd_tum /root/catkin_ws/src/MySLAM/Vocabulary/ORBvoc.txt /root/catkin_ws/src/MySLAM/Examples/RGB-D/TUM1.yaml /root/Dataset/fr3_w_xyz /root/Dataset/fr3_w_xyz/associate.txt
 
 int main(int argc, char **argv) {
-    if (argc != 5) {
-        cerr << endl << "Usage: ./rgbd_tum path_to_vocabulary path_to_settings path_to_sequence path_to_association" << endl;
+    if (argc < 5) {
+        cerr << endl << "Usage: ./rgbd_tum path_to_vocabulary path_to_settings path_to_sequence path_to_association people_init_score dynamic_thresh alpha beta" << endl;
         return 1;
     }
 
@@ -72,7 +74,21 @@ int main(int argc, char **argv) {
     // viewer = new ORB_SLAM2::Viewer();
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     // ORB_SLAM2::System SLAM(argv[1], argv[2], strPascalPNG, ORB_SLAM2::System::RGBD, viewer);
-    ORB_SLAM2::System SLAM(argv[1], argv[2], strPascalPNG, ORB_SLAM2::System::RGBD);
+    ORB_SLAM2::DynaParams dyna_params;
+    if (argc > 5) {
+        dyna_params.people_init_score = stod(string(argv[5]));
+    }
+    if (argc > 6) {
+        dyna_params.dynamic_thresh = stod(string(argv[6]));
+    }
+    if (argc > 7) {
+        dyna_params.alpha = stod(string(argv[7]));
+    }
+    if (argc > 8) {
+        dyna_params.beta = stod(string(argv[8]));
+    }
+
+    ORB_SLAM2::System SLAM(argv[1], argv[2], strPascalPNG, dyna_params, ORB_SLAM2::System::RGBD);
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;
@@ -174,7 +190,7 @@ void LoadImages(const string& strAssociationFilename, vector<string>& vstrImageF
             ss >> t;
             ss >> sD;
             vstrImageFilenamesD.push_back(sD);
-            cout << sSeg << " read." << endl;
+            // cout << sSeg << " read." << endl;
         }
     }
     std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();

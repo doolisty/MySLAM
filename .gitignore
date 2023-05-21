@@ -28,3 +28,7 @@ lib/
 # depth contour extraction
 *.png
 dip_out/
+
+# logs
+*/__pycache__/
+**/*log

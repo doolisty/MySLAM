@@ -41,7 +41,7 @@ FrameDrawer::FrameDrawer(Map* pMap) : mpMap(pMap) {
 }
 
 cv::Mat FrameDrawer::DrawFrame() {
-  printf("##### This is DrawFrame! (mState = %d)\n", mState);
+//   printf("##### This is DrawFrame! (mState = %d)\n", mState);
   cv::Mat im;
   vector<cv::KeyPoint>
       vIniKeys;  // Initialization: KeyPoints in reference frame
@@ -62,17 +62,17 @@ cv::Mat FrameDrawer::DrawFrame() {
     mIm.copyTo(im);
 
     if (mState == Tracking::NOT_INITIALIZED) {
-      printf("mState == Tracking::NOT_INITIALIZED\n");
+    //   printf("mState == Tracking::NOT_INITIALIZED\n");
       vCurrentKeys = mvCurrentKeys;
       vIniKeys = mvIniKeys;
       vMatches = mvIniMatches;
     } else if (mState == Tracking::OK) {
-      printf("mState == Tracking::OK\n");
+    //   printf("mState == Tracking::OK\n");
       vCurrentKeys = mvCurrentKeys;
       vbVO = mvbVO;
       vbMap = mvbMap;
     } else if (mState == Tracking::LOST) {
-      printf("mState == Tracking::LOST\n");
+    //   printf("mState == Tracking::LOST\n");
       vCurrentKeys = mvCurrentKeys;
     }
   }
@@ -90,6 +90,7 @@ cv::Mat FrameDrawer::DrawFrame() {
       }
     }
   } else if (state == Tracking::OK) {
+    // printf("state == Tracking::OK\n");
     mnTracked = 0;
     mnTrackedVO = 0;
     const float r = 5;

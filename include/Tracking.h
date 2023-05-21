@@ -80,13 +80,14 @@ class System;
 // class Segment;
 
 struct PtStat;
+struct DynaParams;
 
 class Tracking {
  public:
   Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer,
            MapDrawer* pMapDrawer, Map* pMap, KeyFrameDatabase* pKFDB,
            const string& strSettingPath, const int sensor,
-           const string& pascal_png);
+           const string& pascal_png, DynaParams dyna_params);
 
   // Preprocess the input and call Track(). Extract features and performs stereo
   // matching.
@@ -164,6 +165,8 @@ class Tracking {
 
   std::unordered_map<int, PtStat> category_stat_track_;
   int moving_frame_cnt_;
+
+  DynaParams dyna_params_;
 
  protected:
   // Main tracking function. It is independent of the input sensor.

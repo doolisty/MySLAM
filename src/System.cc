@@ -81,7 +81,7 @@ bool has_suffix(const std::string &str, const std::string &suffix) {
 namespace ORB_SLAM2 {
 
 System::System(const string &strVocFile, const string &strSettingsFile,
-               const string &pascal_png, const eSensor sensor, Viewer *pViewer,
+               const string &pascal_png, DynaParams dyna_params, const eSensor sensor, Viewer *pViewer,
                Map *map, ORBVocabulary *voc)
     : mSensor(sensor),
       mbReset(false),
@@ -158,7 +158,7 @@ System::System(const string &strVocFile, const string &strSettingsFile,
 
   mpTracker =
       new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer, mpMap,
-                   mpKeyFrameDatabase, strSettingsFile, mSensor, pascal_png);
+                   mpKeyFrameDatabase, strSettingsFile, mSensor, pascal_png, dyna_params);
   cout << "[Tracking] running in thread " << hex << this_thread::get_id()
        << endl;
 
