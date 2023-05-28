@@ -227,9 +227,17 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth,
       category_stat_ptr_(track_category_stat_ptr),
       dynamic_thresh_(dyna_params.dynamic_thresh),
       alpha_(dyna_params.alpha),
-      beta_(dyna_params.beta) {
+      beta_(dyna_params.beta),
+      block_size_(dyna_params.block_size) {
   // Frame ID
   mnId = nNextId++;
+  if (block_size_ == -1) {
+    use_block_buckets_ = false;
+    block_buckets_ = std::vector<std::vector<int>>();
+  } else {
+    use_block_buckets_ = true;
+    block_buckets_ = std::vector<std::vector<int>>((int)(Camera::height / block_size_), std::vector<int>((int)(Camera::width / block_size_), 0));
+  }
 
   // Scale Level Info
   InitializeScaleLevels();
@@ -267,16 +275,19 @@ void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray,
   for (auto &entry : *category_stat_ptr_) {
     int label = entry.first;
     PtStat &stat = entry.second;
-    if (stat.curr_score >= dynamic_thresh_) {
+    if (label != 0 && stat.curr_score >= dynamic_thresh_) {
+    // if (stat.curr_score >= dynamic_thresh_) {
       dynamic_labels.insert(label);
     }
   }
 
-  // std::cout << "dynamic labels: ";
-  // for (auto it = dynamic_labels.begin(); it != dynamic_labels.end(); ++it) {
-  //   std::cout << std::dec << *it << ", ";
+  // if (!dynamic_labels.empty()) {
+  //   std::cout << "dynamic labels: ";
+  //   for (auto it = dynamic_labels.begin(); it != dynamic_labels.end(); ++it) {
+  //     std::cout << std::dec << *it << ", ";
+  //   }
+  //   std::cout << std::endl;
   // }
-  // std::cout << std::endl;
 
   // int flagprocess = 0;
   // for (int m = 0; m < imS.rows; m += 1)  {
@@ -311,7 +322,7 @@ void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray,
   ExtractORBDesp(imGray);
   N = mvKeys.size();
   if (mvKeys.empty()) {
-    std::cout << "mvKeys is empty, returned" << std::endl;
+    // std::cout << "mvKeys is empty, returned" << std::endl;
     return;
   }
   UndistortKeyPoints();
@@ -443,7 +454,8 @@ void Frame::ProcessMovingObject(const cv::Mat &imgray) {
 }
 
 void Frame::ProcessMovingObjectSeg(const cv::Mat &imgray,
-                                   const cv::Mat &imSeg) {
+                                   const cv::Mat &imSeg/*,
+                                   std::vector<std::vector<int>> prev_buckets*/) {
   // Clear the previous data
   F_prepoint.clear();
   F_nextpoint.clear();
@@ -535,6 +547,12 @@ void Frame::ProcessMovingObjectSeg(const cv::Mat &imgray,
         tmp_stats[label] = PtStat();
       }
 
+      // if (use_block_buckets_ && label == 0) {
+      //   if (prev_buckets[(int)(tmp_y / block_size_)][(int)(tmp_x / block_size_)] > 0) {
+      //     T_M.push_back(nextpoint[i]);
+      //   }
+      // }
+
       // Judge outliers
       if (dd <= limit_dis_epi) {
         ++tmp_stats[label].num_static;
@@ -542,6 +560,22 @@ void Frame::ProcessMovingObjectSeg(const cv::Mat &imgray,
       }
       ++tmp_stats[label].num_dynamic;
       T_M.push_back(nextpoint[i]);
+
+      // insert into bucket
+      if (use_block_buckets_ && label == 0) {
+        ++block_buckets_[(int)(tmp_y / block_size_)][(int)(tmp_x / block_size_)];
+      }
+    }
+  }
+
+  if (use_block_buckets_) {
+    for (int i = 0; i < prepoint.size(); ++i) {
+      int tmp_x = (int)nextpoint[i].x, tmp_y = (int)nextpoint[i].y;
+      tmp_x = std::max(0, std::min(tmp_x, (int)Camera::width - 1));
+      tmp_y = std::max(0, std::min(tmp_y, (int)Camera::height - 1));
+      if (block_buckets_[(int)(tmp_y / block_size_)][(int)(tmp_x / block_size_)] > 0) {
+        T_M.push_back(nextpoint[i]);
+      }
     }
   }
 

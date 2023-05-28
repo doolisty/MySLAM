@@ -97,18 +97,18 @@ bool Camera::Load(cv::FileStorage fSettings) {
   Camera::b = Camera::bf / Camera::fx;
 
   Camera::initialized = true;
-  cout << "- size: " << Camera::width << "x" << Camera::height << endl;
-  cout << "- fx: " << Camera::fx << endl;
-  cout << "- fy: " << Camera::fy << endl;
-  cout << "- cx: " << Camera::cx << endl;
-  cout << "- cy: " << Camera::cy << endl;
-  cout << "- k1: " << Camera::DistCoef.at<float>(0) << endl;
-  cout << "- k2: " << Camera::DistCoef.at<float>(1) << endl;
-  if (Camera::DistCoef.rows == 5)
-    cout << "- k3: " << Camera::DistCoef.at<float>(4) << endl;
-  cout << "- p1: " << Camera::DistCoef.at<float>(2) << endl;
-  cout << "- p2: " << Camera::DistCoef.at<float>(3) << endl;
-  cout << "- bf: " << Camera::bf << endl;
+  // cout << "- size: " << Camera::width << "x" << Camera::height << endl;
+  // cout << "- fx: " << Camera::fx << endl;
+  // cout << "- fy: " << Camera::fy << endl;
+  // cout << "- cx: " << Camera::cx << endl;
+  // cout << "- cy: " << Camera::cy << endl;
+  // cout << "- k1: " << Camera::DistCoef.at<float>(0) << endl;
+  // cout << "- k2: " << Camera::DistCoef.at<float>(1) << endl;
+  // if (Camera::DistCoef.rows == 5)
+  //   cout << "- k3: " << Camera::DistCoef.at<float>(4) << endl;
+  // cout << "- p1: " << Camera::DistCoef.at<float>(2) << endl;
+  // cout << "- p2: " << Camera::DistCoef.at<float>(3) << endl;
+  // cout << "- bf: " << Camera::bf << endl;
   return true;
 }
 

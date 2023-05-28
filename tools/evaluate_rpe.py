@@ -322,10 +322,10 @@ if __name__ == '__main__':
     parser.add_argument('--plot', help='plot the result to a file (requires --fixed_delta, output format: png)')
     parser.add_argument('--verbose', help='print all evaluation data (otherwise, only the mean translational error measured in meters will be printed)', action='store_true')
     args = parser.parse_args()
-    
+
     if args.plot and not args.fixed_delta:
         sys.exit("The '--plot' option can only be used in combination with '--fixed_delta'")
-    
+
     traj_gt = read_trajectory(args.groundtruth_file)
     traj_est = read_trajectory(args.estimated_file)
     
@@ -341,28 +341,28 @@ if __name__ == '__main__':
     stamps = numpy.array(result)[:,0]
     trans_error = numpy.array(result)[:,4]
     rot_error = numpy.array(result)[:,5]
-    
+
     if args.save:
         f = open(args.save,"w")
         f.write("\n".join([" ".join(["%f"%v for v in line]) for line in result]))
         f.close()
-    
+
     if args.verbose:
-        print("compared_pose_pairs %d pairs"%(len(trans_error)))
+        print("compared_pose_pairs %d (9983) pairs"%(len(trans_error)))
 
-        print("translational_error.rmse %f m"%numpy.sqrt(numpy.dot(trans_error,trans_error) / len(trans_error)))
-        print("translational_error.mean %f m"%numpy.mean(trans_error))
-        print("translational_error.median %f m"%numpy.median(trans_error))
-        print("translational_error.std %f m"%numpy.std(trans_error))
-        print("translational_error.min %f m"%numpy.min(trans_error))
-        print("translational_error.max %f m"%numpy.max(trans_error))
+        print("translational_error.rmse %f (0.044949) m"%numpy.sqrt(numpy.dot(trans_error,trans_error) / len(trans_error)))
+        print("translational_error.mean %f (0.038940) m"%numpy.mean(trans_error))
+        print("translational_error.median %f (0.034686) m"%numpy.median(trans_error))
+        print("translational_error.std %f (0.022451) m"%numpy.std(trans_error))
+        print("translational_error.min %f (0.000000) m"%numpy.min(trans_error))
+        print("translational_error.max %f (0.145818) m"%numpy.max(trans_error))
 
-        print("rotational_error.rmse %f deg"%(numpy.sqrt(numpy.dot(rot_error,rot_error) / len(rot_error)) * 180.0 / numpy.pi))
-        print("rotational_error.mean %f deg"%(numpy.mean(rot_error) * 180.0 / numpy.pi))
-        print("rotational_error.median %f deg"%(numpy.median(rot_error) * 180.0 / numpy.pi))
-        print("rotational_error.std %f deg"%(numpy.std(rot_error) * 180.0 / numpy.pi))
-        print("rotational_error.min %f deg"%(numpy.min(rot_error) * 180.0 / numpy.pi))
-        print("rotational_error.min %f deg"%(numpy.min(rot_error) * 180.0 / numpy.pi))
+        print("rotational_error.rmse %f (0.802908) deg"%(numpy.sqrt(numpy.dot(rot_error,rot_error) / len(rot_error)) * 180.0 / numpy.pi))
+        print("rotational_error.mean %f (0.654910) deg"%(numpy.mean(rot_error) * 180.0 / numpy.pi))
+        print("rotational_error.median %f (0.009936) deg"%(numpy.median(rot_error) * 180.0 / numpy.pi))
+        print("rotational_error.std %f (0.464494) deg"%(numpy.std(rot_error) * 180.0 / numpy.pi))
+        print("rotational_error.min %f (0.000000) deg"%(numpy.min(rot_error) * 180.0 / numpy.pi))
+        print("rotational_error.max %f (6.790224) deg"%(numpy.max(rot_error) * 180.0 / numpy.pi))
     else:
         print(numpy.mean(trans_error))
 

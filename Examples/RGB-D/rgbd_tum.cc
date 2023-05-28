@@ -87,6 +87,9 @@ int main(int argc, char **argv) {
     if (argc > 8) {
         dyna_params.beta = stod(string(argv[8]));
     }
+    if (argc > 9) {
+        dyna_params.block_size = stod(string(argv[9]));
+    }
 
     ORB_SLAM2::System SLAM(argv[1], argv[2], strPascalPNG, dyna_params, ORB_SLAM2::System::RGBD);
 

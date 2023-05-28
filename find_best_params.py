@@ -1,9 +1,10 @@
 import os
+import time
 
-people_init_score_range = [0.1, 1.1, 0.1]
-dynamic_thresh_range = [0.1, 1.1, 0.1]
-alpha_range = [0.1, 2.1, 0.1]
-beta_range = [5.0, 26.0, 1.0]
+people_init_score_range = [0.1, 0.6, 0.1]
+dynamic_thresh_range = [0.1, 0.6, 0.1]
+alpha_range = [0.1, 0.7, 0.1]
+beta_range = [19.0, 30.0, 1.0]
 
 dataset = "fr3_w_xyz"
 result_lst = []
@@ -75,7 +76,10 @@ def core_cmd(pi, dt, a, b, dataset):
             result_dict["rpe_rot_min"] = float(lst[1])
         elif lst[0] == "rotational_error.max":
             result_dict["rpe_rot_max"] = float(lst[1])
-    # print(result_dict)
+    print("=" * 30)
+    print(f"pi = {pi}, dt = {dt}, a = {a}, b = {b}")
+    print(result_dict)
+    print("=" * 30)
     result_lst.append(result_dict)
 
 
@@ -90,13 +94,16 @@ def sort_list(key, top_k=10):
 
 range2lst_func = lambda lst: [lst[0] + idx * lst[2] for idx in range(int(lst[1] // lst[2] - lst[0] // lst[2]))]
 
-for pi in range2lst_func(people_init_score_range):
-    for dt in range2lst_func(dynamic_thresh_range):
-        for a in range2lst_func(alpha_range):
-            for b in range2lst_func(beta_range):
-                with open("./profile_params_result/eval_result_log", "w") as f:
-                    core_cmd(pi, dt, a, b, dataset)
-                    f.write(str(result_lst))
+# for pi in range2lst_func(people_init_score_range):
+for dt in range2lst_func(dynamic_thresh_range):
+    for a in range2lst_func(alpha_range):
+        for b in range2lst_func(beta_range):
+            now = time.time()
+            core_cmd(0.6, dt, a, b, dataset)
+            end = time.time()
+            print(f"time elapsed: {end - now}")
+            with open("./profile_params_result/eval_result_log", "w") as f:
+                f.write(str(result_lst))
 
 rankings = ""
 for key in ["ate_rmse", "rpe_trans_rmse", "rpe_rot_rmse"]:

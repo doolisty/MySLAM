@@ -97,8 +97,9 @@ struct DynaParams {
   double dynamic_thresh;
   double alpha;
   double beta;
+  int block_size;
 
-  DynaParams() : people_init_score(0.6), dynamic_thresh(0.6), alpha(0.4), beta(15.0) {}
+  DynaParams() : people_init_score(0.6), dynamic_thresh(0.6), alpha(0.4), beta(15.0), block_size(-1) {}
 };
 
 class Frame {
@@ -276,8 +277,12 @@ class Frame {
   double dynamic_thresh_;
   double alpha_;
   double beta_;
+  int block_size_;
+  bool use_block_buckets_;
 
   int moving_frame_cnt_;
+
+  std::vector<std::vector<int>> block_buckets_;
 };
 
 }  // namespace ORB_SLAM2

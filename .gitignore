@@ -32,3 +32,4 @@ dip_out/
 # logs
 */__pycache__/
 **/*log
+profile_params_result/

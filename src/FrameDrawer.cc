@@ -105,7 +105,7 @@ cv::Mat FrameDrawer::DrawFrame() {
         // This is a match to a MapPoint in the map
         if (vbMap[i]) {
           cv::rectangle(im, pt1, pt2, cv::Scalar(0, 255, 0));
-          cv::circle(im, vCurrentKeys[i].pt, 2, cv::Scalar(0, 0, 255), -1);
+          cv::circle(im, vCurrentKeys[i].pt, 2, cv::Scalar(0, 255, 0), -1);
           mnTracked++;
         } else {
           // This is match to a "visual odometry" MapPoint created in the last
@@ -115,6 +115,17 @@ cv::Mat FrameDrawer::DrawFrame() {
           mnTrackedVO++;
         }
       }
+    }
+
+    for (auto &pt : mvDynaPts) {
+        cv::Point2f pt1, pt2;
+        pt1.x = pt.x - r;
+        pt1.y = pt.y - r;
+        pt2.x = pt.x + r;
+        pt2.y = pt.y + r;
+
+        cv::rectangle(im, pt1, pt2, cv::Scalar(0, 0, 255));
+        cv::circle(im, pt, 2, cv::Scalar(0, 0, 255), -1);
     }
   }
 
@@ -161,6 +172,7 @@ void FrameDrawer::Update(Tracking* pTracker) {
   unique_lock<mutex> lock(mMutex);
   pTracker->mImGray.copyTo(mIm);
   mvCurrentKeys = pTracker->mCurrentFrame.mvKeys;
+  mvDynaPts = pTracker->mCurrentFrame.T_M;
   N = mvCurrentKeys.size();
   mvbVO = vector<bool>(N, false);
   mvbMap = vector<bool>(N, false);

@@ -55,6 +55,7 @@ class FrameDrawer {
   cv::Mat mIm;
   int N;
   vector<cv::KeyPoint> mvCurrentKeys;
+  std::vector<cv::Point2f> mvDynaPts;
   vector<bool> mvbMap, mvbVO;
   bool mbOnlyTracking;
   int mnTracked, mnTrackedVO;
