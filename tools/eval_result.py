@@ -7,7 +7,7 @@ parser.add_argument('--rerun', help='', action='store_true')
 parser.add_argument('--gdb', help='', action='store_true')
 args = parser.parse_args()
 
-pi, dt, a, b, bs = 0.6, 0.4, 0.2, 23.0, -1
+pi, dt, a, b, bs, ss = 0.6, 0.4, 0.2, 23.0, -1, 10
 dataset = "fr3_w_xyz"
 repeat = 1
 
@@ -17,7 +17,7 @@ for i in range(repeat):
         if args.gdb:
             cmd += "gdb -args "
         cmd += f"./rgbd_tum /root/catkin_ws/src/MySLAM/Vocabulary/ORBvoc.txt /root/catkin_ws/src/MySLAM/Examples/RGB-D/TUM1.yaml /root/Dataset/{dataset} /root/Dataset/{dataset}/associate.txt"
-        cmd += f" {pi} {dt} {a} {b} {bs}"
+        cmd += f" {pi} {dt} {a} {b} {bs} {ss}"
 
         os.chdir(os.getcwd() + "/Examples/RGB-D") # cd Examples/RGB-D
         start = time.time()

@@ -98,8 +98,9 @@ struct DynaParams {
   double alpha;
   double beta;
   int block_size;
+  int search_size;
 
-  DynaParams() : people_init_score(0.6), dynamic_thresh(0.6), alpha(0.4), beta(15.0), block_size(-1) {}
+  DynaParams() : people_init_score(0.6), dynamic_thresh(0.6), alpha(0.4), beta(15.0), block_size(-1), search_size(2) {}
 };
 
 class Frame {
@@ -274,15 +275,19 @@ class Frame {
   cv::Mat mRwc;
   cv::Mat mOw;
 
-  double dynamic_thresh_;
-  double alpha_;
-  double beta_;
-  int block_size_;
+  DynaParams dyna_params_;
+//   cv::Mat imSegRef;
+
+//   double dynamic_thresh_;
+//   double alpha_;
+//   double beta_;
+//   int block_size_;
   bool use_block_buckets_;
 
   int moving_frame_cnt_;
 
   std::vector<std::vector<int>> block_buckets_;
+  std::unordered_set<int> dynamic_labels_;
 };
 
 }  // namespace ORB_SLAM2

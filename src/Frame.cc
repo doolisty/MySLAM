@@ -225,18 +225,22 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth,
       mTimeStamp(timeStamp),
       mThDepth(thDepth),
       category_stat_ptr_(track_category_stat_ptr),
-      dynamic_thresh_(dyna_params.dynamic_thresh),
-      alpha_(dyna_params.alpha),
-      beta_(dyna_params.beta),
-      block_size_(dyna_params.block_size) {
+      dyna_params_(dyna_params) {
+      // dynamic_thresh_(dyna_params.dynamic_thresh),
+      // alpha_(dyna_params.alpha),
+      // beta_(dyna_params.beta),
+      // block_size_(dyna_params.block_size) {
   // Frame ID
   mnId = nNextId++;
-  if (block_size_ == -1) {
+  // cv::Size sz(cvRound((float)imSeg.cols / dyna_params_.ref_scale_factor),
+  //             cvRound((float)imSeg.rows / dyna_params_.ref_scale_factor));
+  // cv::resize(imSeg, imSegRef, sz, 0, 0, INTER_AREA);
+  if (dyna_params_.block_size == -1) {
     use_block_buckets_ = false;
     block_buckets_ = std::vector<std::vector<int>>();
   } else {
     use_block_buckets_ = true;
-    block_buckets_ = std::vector<std::vector<int>>((int)(Camera::height / block_size_), std::vector<int>((int)(Camera::width / block_size_), 0));
+    block_buckets_ = std::vector<std::vector<int>>((int)(Camera::height / dyna_params_.block_size), std::vector<int>((int)(Camera::width / dyna_params_.block_size), 0));
   }
 
   // Scale Level Info
@@ -271,19 +275,19 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth,
 void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray,
                              const cv::Mat &imDepth, const cv::Mat &imS,
                              int &moving_frame_cnt) {
-  std::unordered_set<int> dynamic_labels;
-  for (auto &entry : *category_stat_ptr_) {
-    int label = entry.first;
-    PtStat &stat = entry.second;
-    if (label != 0 && stat.curr_score >= dynamic_thresh_) {
-    // if (stat.curr_score >= dynamic_thresh_) {
-      dynamic_labels.insert(label);
-    }
-  }
+  // std::unordered_set<int> dynamic_labels;
+  // for (auto &entry : *category_stat_ptr_) {
+  //   int label = entry.first;
+  //   PtStat &stat = entry.second;
+  //   if (label != 0 && stat.curr_score >= dyna_params_.dynamic_thresh) {
+  //   // if (stat.curr_score >= dyna_params_.dynamic_thresh) {
+  //     dynamic_labels.insert(label);
+  //   }
+  // }
 
-  // if (!dynamic_labels.empty()) {
+  // if (!dynamic_labels_.empty()) {
   //   std::cout << "dynamic labels: ";
-  //   for (auto it = dynamic_labels.begin(); it != dynamic_labels.end(); ++it) {
+  //   for (auto it = dynamic_labels_.begin(); it != dynamic_labels_.end(); ++it) {
   //     std::cout << std::dec << *it << ", ";
   //   }
   //   std::cout << std::endl;
@@ -304,12 +308,12 @@ void Frame::CalculEverything(const cv::Mat &imRGB, const cv::Mat &imGray,
   // }
 
   // if (!T_M.empty() && flagprocess) {
-  if (!T_M.empty() && dynamic_labels.size() > 0) {
+  if (!T_M.empty() && dynamic_labels_.size() > 0) {
     ++moving_frame_cnt;
     std::chrono::steady_clock::time_point tc1 =
         std::chrono::steady_clock::now();
     flag_mov = mpORBextractorLeft->CheckMovingKeyPoints(imGray, imS, mvKeysTemp,
-                                                        T_M, dynamic_labels);
+                                                        T_M, dynamic_labels_);
     std::chrono::steady_clock::time_point tc2 =
         std::chrono::steady_clock::now();
     double tc =
@@ -454,8 +458,7 @@ void Frame::ProcessMovingObject(const cv::Mat &imgray) {
 }
 
 void Frame::ProcessMovingObjectSeg(const cv::Mat &imgray,
-                                   const cv::Mat &imSeg/*,
-                                   std::vector<std::vector<int>> prev_buckets*/) {
+                                   const cv::Mat &imSeg) {
   // Clear the previous data
   F_prepoint.clear();
   F_nextpoint.clear();
@@ -529,6 +532,7 @@ void Frame::ProcessMovingObjectSeg(const cv::Mat &imgray,
   F_nextpoint = F2_nextpoint;
 
   std::unordered_map<int, PtStat> tmp_stats;
+  std::unordered_set<int> dyna_pt_idx;
 
   for (int i = 0; i < prepoint.size(); i++) {
     if (state[i] != 0) {
@@ -547,12 +551,6 @@ void Frame::ProcessMovingObjectSeg(const cv::Mat &imgray,
         tmp_stats[label] = PtStat();
       }
 
-      // if (use_block_buckets_ && label == 0) {
-      //   if (prev_buckets[(int)(tmp_y / block_size_)][(int)(tmp_x / block_size_)] > 0) {
-      //     T_M.push_back(nextpoint[i]);
-      //   }
-      // }
-
       // Judge outliers
       if (dd <= limit_dis_epi) {
         ++tmp_stats[label].num_static;
@@ -560,21 +558,11 @@ void Frame::ProcessMovingObjectSeg(const cv::Mat &imgray,
       }
       ++tmp_stats[label].num_dynamic;
       T_M.push_back(nextpoint[i]);
+      dyna_pt_idx.insert(i);
 
       // insert into bucket
       if (use_block_buckets_ && label == 0) {
-        ++block_buckets_[(int)(tmp_y / block_size_)][(int)(tmp_x / block_size_)];
-      }
-    }
-  }
-
-  if (use_block_buckets_) {
-    for (int i = 0; i < prepoint.size(); ++i) {
-      int tmp_x = (int)nextpoint[i].x, tmp_y = (int)nextpoint[i].y;
-      tmp_x = std::max(0, std::min(tmp_x, (int)Camera::width - 1));
-      tmp_y = std::max(0, std::min(tmp_y, (int)Camera::height - 1));
-      if (block_buckets_[(int)(tmp_y / block_size_)][(int)(tmp_x / block_size_)] > 0) {
-        T_M.push_back(nextpoint[i]);
+        ++block_buckets_[(int)(tmp_y / dyna_params_.block_size)][(int)(tmp_x / dyna_params_.block_size)];
       }
     }
   }
@@ -583,10 +571,14 @@ void Frame::ProcessMovingObjectSeg(const cv::Mat &imgray,
                                const double &prev_score) -> double {
     return std::max(
         0.0, std::min(1.0, prev_score +
-                               alpha_ * (beta_ * n_dy - n_st) / (n_dy + n_st)));
+                               dyna_params_.alpha * (dyna_params_.beta * n_dy - n_st) / (n_dy + n_st)));
   };
 
   // 更新 pts_stats
+  // auto print_marks = [](){
+  //   std::cout << "=====================================================================================================" << std::endl;
+  // };
+  // print_marks();
   for (const auto &entry : tmp_stats) {
     int label = entry.first;
     PtStat stat = entry.second;
@@ -602,7 +594,58 @@ void Frame::ProcessMovingObjectSeg(const cv::Mat &imgray,
       // 使用默认的拷贝构造函数
       (*category_stat_ptr_)[label] = stat;
     }
+    auto &track_stat = (*category_stat_ptr_)[label];
+    // std::cout << "label = " << label << ", stat.curr_score = " << stat.curr_score << ", dyna_params_.dynamic_thresh = " << dyna_params_.dynamic_thresh << std::endl;
+    if (label != 0 && track_stat.curr_score >= dyna_params_.dynamic_thresh) {
+    // if (stat.curr_score >= dyna_params_.dynamic_thresh) {
+      dynamic_labels_.insert(label);
+    }
   }
+  // print_marks();
+
+  for (int i = 0; i < prepoint.size(); ++i) {
+    if (dyna_pt_idx.count(i) == 0) {
+      continue;
+    }
+    bool near_dyna_obj = false;
+    int tmp_y = (int)nextpoint[i].y, tmp_x = (int)nextpoint[i].x;
+    tmp_y = std::max(0, std::min(tmp_y, (int)Camera::height - 1));
+    tmp_x = std::max(0, std::min(tmp_x, (int)Camera::width - 1));
+    if (use_block_buckets_) {
+      if (block_buckets_[(int)(tmp_y / dyna_params_.block_size)][(int)(tmp_x / dyna_params_.block_size)] > 0) {
+        T_M.push_back(nextpoint[i]);
+        dyna_pt_idx.insert(i);
+        continue;
+      }
+    }
+    if (dyna_pt_idx.count(i) == 0) {
+      continue;
+    }
+    // std::cout << "start to search for pt[" << i << "]\nlabels: ";
+    int ss = dyna_params_.search_size;
+    for (int dy = -ss; dy <= ss; ++dy) {
+      for (int dx = -ss; dx <= ss; ++dx) {
+        int ny = tmp_y + dy;
+        int nx = tmp_x + dx;
+        ny = std::max(0, std::min(ny, (int)Camera::height - 1));
+        nx = std::max(0, std::min(nx, (int)Camera::width - 1));
+
+        int label = (int)imSeg.ptr<uchar>(ny)[nx];
+        // std::cout << label << " ";
+        if (dynamic_labels_.count(label) > 0) {
+          // std::cout << std::endl << "found dynamic object! (" << label << ")";
+          T_M.push_back(nextpoint[i]);
+          dyna_pt_idx.insert(i);
+          near_dyna_obj = true;
+          break;
+        }
+        if (near_dyna_obj) break;
+      }
+      if (near_dyna_obj) break;
+    }
+    // std::cout << std::endl;
+  }
+  // print_marks();
 }
 
 void Frame::SetPose(cv::Mat Tcw) {

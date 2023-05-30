@@ -5,14 +5,15 @@ people_init_score_range = [0.1, 0.6, 0.1]
 dynamic_thresh_range = [0.1, 0.6, 0.1]
 alpha_range = [0.1, 0.7, 0.1]
 beta_range = [19.0, 30.0, 1.0]
+search_range = [1.0, 100.0, 1.0]
 
 dataset = "fr3_w_xyz"
 result_lst = []
 
 # python3 tools/evaluate_rpe.py /root/Dataset/fr3_w_xyz/groundtruth.txt /root/catkin_ws/src/MySLAM/Examples/RGB-D/CameraTrajectory.txt --verbose
-def core_cmd(pi, dt, a, b, dataset):
+def core_cmd(pi, dt, a, b, ss, dataset):
     cmd = f"./rgbd_tum /root/catkin_ws/src/MySLAM/Vocabulary/ORBvoc.txt /root/catkin_ws/src/MySLAM/Examples/RGB-D/TUM1.yaml /root/Dataset/{dataset} /root/Dataset/{dataset}/associate.txt"
-    cmd += f" {pi} {dt} {a} {b}"
+    cmd += f" {pi} {dt} {a} {b} -1 {ss}"
 
     os.chdir(os.getcwd() + "/Examples/RGB-D") # cd Examples/RGB-D
     os.system(cmd)
@@ -22,7 +23,7 @@ def core_cmd(pi, dt, a, b, dataset):
 
     # eval ATE
     os.system(f"python3 tools/evaluate_ate.py {gt_path} {cur_res_path} --verbose > tools/tmp_res_log")
-    result_dict = {"params": [pi, dt, a, b]}
+    result_dict = {"params": [pi, dt, a, b, ss]}
     with open("tools/tmp_res_log", "r") as f:
         lines = f.readlines()
     for line in lines:
@@ -77,7 +78,7 @@ def core_cmd(pi, dt, a, b, dataset):
         elif lst[0] == "rotational_error.max":
             result_dict["rpe_rot_max"] = float(lst[1])
     print("=" * 30)
-    print(f"pi = {pi}, dt = {dt}, a = {a}, b = {b}")
+    print(f"pi = {pi}, dt = {dt}, a = {a}, b = {b}, ss = {ss}")
     print(result_dict)
     print("=" * 30)
     result_lst.append(result_dict)
@@ -95,23 +96,24 @@ def sort_list(key, top_k=10):
 range2lst_func = lambda lst: [lst[0] + idx * lst[2] for idx in range(int(lst[1] // lst[2] - lst[0] // lst[2]))]
 
 # for pi in range2lst_func(people_init_score_range):
-for dt in range2lst_func(dynamic_thresh_range):
-    for a in range2lst_func(alpha_range):
-        for b in range2lst_func(beta_range):
-            now = time.time()
-            core_cmd(0.6, dt, a, b, dataset)
-            end = time.time()
-            print(f"time elapsed: {end - now}")
-            with open("./profile_params_result/eval_result_log", "w") as f:
-                f.write(str(result_lst))
+# for dt in range2lst_func(dynamic_thresh_range):
+#     for a in range2lst_func(alpha_range):
+#         for b in range2lst_func(beta_range):
+for ss in range2lst_func(search_range):
+    now = time.time()
+    core_cmd(0.6, 0.3, 0.3, 30.0, ss, dataset)
+    end = time.time()
+    print(f"time elapsed: {end - now}")
+    with open("./profile_params_result/eval_result_log", "w") as f:
+        f.write(str(result_lst))
 
 rankings = ""
 for key in ["ate_rmse", "rpe_trans_rmse", "rpe_rot_rmse"]:
     rankings += key
     rankings += "\n\n"
     params = sort_list(key)
-    for pi, dt, a, b, res, pairs in params:
-        rankings += f"[{key} = {res} in {pairs} pairs] people_init_score = {pi}, dynamic_thresh = {dt}, alpha = {a}, beta = {b}\n"
+    for pi, dt, a, b, ss, res, pairs in params:
+        rankings += f"[{key} = {res} in {pairs} pairs] search_size = {ss}, people_init_score = {pi}, dynamic_thresh = {dt}, alpha = {a}, beta = {b}\n"
     rankings += "\n\n"
 
 # os.system("rm profile_params_result/ranking_result_log")

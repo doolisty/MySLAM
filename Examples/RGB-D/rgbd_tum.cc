@@ -90,6 +90,9 @@ int main(int argc, char **argv) {
     if (argc > 9) {
         dyna_params.block_size = stod(string(argv[9]));
     }
+    if (argc > 10) {
+        dyna_params.search_size = stod(string(argv[10]));
+    }
 
     ORB_SLAM2::System SLAM(argv[1], argv[2], strPascalPNG, dyna_params, ORB_SLAM2::System::RGBD);
 
