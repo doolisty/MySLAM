@@ -603,6 +603,15 @@ void Frame::ProcessMovingObjectSeg(const cv::Mat &imgray,
   }
   // print_marks();
 
+  // std::cout << "dynamic labels: ";
+  // // if (!dynamic_labels_.empty()) {
+  //   for (auto it = dynamic_labels_.begin(); it != dynamic_labels_.end(); ++it) {
+  //     std::cout << std::dec << *it << ", ";
+  //   }
+  // // }
+  // std::cout << std::endl;
+
+  int count = 0;
   for (int i = 0; i < prepoint.size(); ++i) {
     if (dyna_pt_idx.count(i) == 0) {
       continue;
@@ -623,28 +632,30 @@ void Frame::ProcessMovingObjectSeg(const cv::Mat &imgray,
     }
     // std::cout << "start to search for pt[" << i << "]\nlabels: ";
     int ss = dyna_params_.search_size;
-    for (int dy = -ss; dy <= ss; ++dy) {
-      for (int dx = -ss; dx <= ss; ++dx) {
-        int ny = tmp_y + dy;
-        int nx = tmp_x + dx;
+    // for (int dy = -ss; dy <= ss; ++dy) {
+    //   for (int dx = -ss; dx <= ss; ++dx) {
+        int ny = tmp_y;// + dy;
+        int nx = tmp_x;// + dx;
         ny = std::max(0, std::min(ny, (int)Camera::height - 1));
         nx = std::max(0, std::min(nx, (int)Camera::width - 1));
 
         int label = (int)imSeg.ptr<uchar>(ny)[nx];
         // std::cout << label << " ";
         if (dynamic_labels_.count(label) > 0) {
+          ++count;
           // std::cout << std::endl << "found dynamic object! (" << label << ")";
           T_M.push_back(nextpoint[i]);
           dyna_pt_idx.insert(i);
           near_dyna_obj = true;
-          break;
+          // break;
         }
-        if (near_dyna_obj) break;
-      }
-      if (near_dyna_obj) break;
-    }
+    //     if (near_dyna_obj) break;
+    //   }
+    //   if (near_dyna_obj) break;
+    // }
     // std::cout << std::endl;
   }
+  // std::cout << count << " pts in dynamic labels (of " << prepoint.size() << " pts)" << std::endl;
   // print_marks();
 }
 
