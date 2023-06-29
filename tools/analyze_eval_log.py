@@ -8,7 +8,7 @@ parser.add_argument("--baseline", action='store_true')
 args = parser.parse_args()
 
 proj_home = "MySLAM_beta" if not args.baseline else "MySLAM_dsslam"
-filepath = f"/root/catkin_ws/src/{proj_home}/profile_params_result/eval_result_log"
+filepath = f"/home/zhaoyang/slam/{proj_home}/profile_params_result/eval_result_log"
 if len(args.suffix) > 0:
     filepath += "_" + args.suffix
 

@@ -38,7 +38,7 @@ class System;
 class Viewer {
  public:
   Viewer(System* pSystem, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer,
-         Tracking* pTracking, const string& strSettingPath);
+         Tracking* pTracking, const string& strSettingPath, bool save_frame);
 
   // Main thread function. Draw points, keyframes, the current camera pose and
   // the last processed frame. Drawing is refreshed according to the camera fps.
@@ -78,6 +78,8 @@ class Viewer {
   bool mbStopped;
   bool mbStopRequested;
   std::mutex mMutexStop;
+
+  bool save_frame_;
 };
 
 }  // namespace ORB_SLAM2

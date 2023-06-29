@@ -4,6 +4,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gdb", help='', action='store_true')
+parser.add_argument("--rerun", help='', action='store_true')
 parser.add_argument("--repeat", help='', default=50)
 parser.add_argument("--baseline", help='', action='store_true')
 parser.add_argument("--video", help='', action='store_true')
@@ -11,9 +12,9 @@ args = parser.parse_args()
 
 def sort_list(key, top_k=10):
     if not args.baseline:
-        lst = sorted(result_lst, key=lambda x: x[key])[:top_k]
+        lst = sorted(result_lst, key=lambda x: x[key])#[:top_k]
     else:
-        lst = sorted(result_lst, key=lambda x: x[key], reverse=True)[:top_k]
+        lst = sorted(result_lst, key=lambda x: x[key], reverse=True)#[:top_k]
     pair_key = key.split("_")[0] + "_pairs"
     return [[x[key], x[pair_key], x["id"]] for x in lst]
 
@@ -26,8 +27,8 @@ params = {
     "search_size": 0
 }
 
-# "fr3_s_halfsphere"
-datasets = ["fr3_s_rpy", "fr3_s_xyz", "fr3_s_static", "fr3_w_halfsphere", "fr3_w_rpy", "fr3_w_static", "fr3_w_xyz"]
+datasets = ["fr2_desk"]
+# datasets = ["fr3_s_halfsphere", "fr3_s_rpy", "fr3_s_xyz", "fr3_s_static", "fr3_w_halfsphere", "fr3_w_rpy", "fr3_w_static", "fr3_w_xyz"]
 proj_home = "MySLAM_beta" if not args.baseline else "MySLAM_dsslam"
 
 for dataset in datasets:
@@ -41,7 +42,9 @@ for dataset in datasets:
         cmd += f" {pi} {dt} {a} {b} {bs} {ss}"
 
     # repeat
-    for repeat_id in range(args.repeat):
+    for repeat_id in range(int(args.repeat)):
+        if not args.rerun:
+            break
         os.chdir(f"/root/catkin_ws/src/{proj_home}/Examples/RGB-D") # cd Examples/RGB-D
         start = time.time()
         os.system(cmd)
@@ -119,6 +122,9 @@ for dataset in datasets:
     # end repeat for loop
 
     rankings = "\n".join([k + ": " + str(v) for k, v in params.items()])
+    if len(result_lst) == 0:
+        with open(f"/root/catkin_ws/src/{proj_home}/profile_params_result/eval_result_log_{dataset}", "r") as f:
+            result_lst = eval(f.readlines()[0])
     for key in ["ate_rmse", "rpe_trans_rmse", "rpe_rot_rmse"]:
         rankings += "\n\n"
         rankings += key
@@ -127,5 +133,5 @@ for dataset in datasets:
         for res, pair_num, id in sort_res:
             rankings += f"[id = {id}] {key} = {res} in {pair_num} pairs\n"
 
-    with open(f"/root/catkin_ws/src/{proj_home}/profile_params_result/ranking_result_log_{dataset}", "w") as f:
+    with open(f"/root/catkin_ws/src/{proj_home}/profile_params_result/ranking_result_log_{dataset}.log", "w") as f:
         f.write(rankings)

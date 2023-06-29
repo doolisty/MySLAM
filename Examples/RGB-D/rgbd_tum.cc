@@ -94,7 +94,12 @@ int main(int argc, char **argv) {
         dyna_params.search_size = stod(string(argv[10]));
     }
 
-    ORB_SLAM2::System SLAM(argv[1], argv[2], strPascalPNG, dyna_params, ORB_SLAM2::System::RGBD);
+    bool save_frame = false;
+    if (argc > 11) {
+        save_frame = stoi(string(argv[11]));
+    }
+
+    ORB_SLAM2::System SLAM(argv[1], argv[2], strPascalPNG, dyna_params, save_frame, ORB_SLAM2::System::RGBD);
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;

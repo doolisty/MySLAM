@@ -81,7 +81,7 @@ bool has_suffix(const std::string &str, const std::string &suffix) {
 namespace ORB_SLAM2 {
 
 System::System(const string &strVocFile, const string &strSettingsFile,
-               const string &pascal_png, DynaParams dyna_params, const eSensor sensor, Viewer *pViewer,
+               const string &pascal_png, DynaParams dyna_params, bool save_frame, const eSensor sensor, Viewer *pViewer,
                Map *map, ORBVocabulary *voc)
     : mSensor(sensor),
       mbReset(false),
@@ -198,7 +198,7 @@ System::System(const string &strVocFile, const string &strSettingsFile,
   // }
 
   mpViewer =
-      new Viewer(this, mpFrameDrawer, mpMapDrawer, mpTracker, strSettingsFile);
+      new Viewer(this, mpFrameDrawer, mpMapDrawer, mpTracker, strSettingsFile, save_frame);
   mptViewer = new thread(&Viewer::Run, mpViewer);
   // mpViewer = new PangolinViewer(strSettingsFile);
   // mptViewer = new thread(&PangolinViewer::Run, mpViewer);

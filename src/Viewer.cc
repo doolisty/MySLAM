@@ -28,7 +28,7 @@ namespace ORB_SLAM2 {
 
 Viewer::Viewer(System *pSystem, FrameDrawer *pFrameDrawer,
                MapDrawer *pMapDrawer, Tracking *pTracking,
-               const string &strSettingPath)
+               const string &strSettingPath, bool save_frame)
     : mpSystem(pSystem),
       mpFrameDrawer(pFrameDrawer),
       mpMapDrawer(pMapDrawer),
@@ -36,7 +36,8 @@ Viewer::Viewer(System *pSystem, FrameDrawer *pFrameDrawer,
       mbFinishRequested(false),
       mbFinished(true),
       mbStopped(true),
-      mbStopRequested(false) {
+      mbStopRequested(false),
+      save_frame_(save_frame) {
   cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
 
   float fps = fSettings["Camera.fps"];
@@ -135,6 +136,9 @@ void Viewer::Run() {
 
     cv::Mat im = mpFrameDrawer->DrawFrame();
     cv::imshow("ORB-SLAM2: Current Frame", im);
+    if (save_frame_) {
+      ;
+    }
     cv::waitKey(mT);
 
     if (menuReset) {
